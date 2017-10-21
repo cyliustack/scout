@@ -12,6 +12,10 @@ Authors: Cheng-Yueh Liu (cyliustack@gmail.com)
 ```
 ./scout tbench alexnet 32 4
 ./scout jbench alexnet 32
+./scout cpu jbench alexnet 32
+./scout mem jbench alexnet 32
+./scout net jbench alexnet 32
+./scout sto jbench alexnet 32
 ./scout fbench tensorflow seq2seq 
 ./scout fbench caffe2 seq2seq
 ```
