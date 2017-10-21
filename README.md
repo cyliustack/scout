@@ -7,3 +7,10 @@ This benchmark suite will include t-bench, j-bench, and f-bench.
 
 Authors: Cheng-Yueh Liu (cyliustack@gmail.com) 
 #
+
+# Usage   
+```
+./scout tbench alexnet 32 4
+./scout jbench alexnet 32
+./scout fbench seq2seq  
+```
