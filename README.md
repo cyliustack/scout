@@ -1,5 +1,5 @@
 # Introduction
-SCOUT: A Fast and Scalable Trace-Driven Computer Cluster Simulator  
+SCOUT: A Multi-scale and Cross-framework Benchmarking for Neural Network Processing Engines.  
 This benchmark suite will include t-bench, j-bench, and f-bench. 
 * t-bench is modified TensorFlow official performance benchmark (https://github.com/tensorflow/benchmarks)
 * j-bench is modified CNN multiple models benchmark (https://github.com/jcjohnson/cnn-benchmarks)
