@@ -12,10 +12,10 @@ cmd:option('-image_width', 224)
 cmd:option('-batch_size', 16)
 
 -- Benchmark options
-cmd:option('-num_passes', 10)
+cmd:option('-num_passes', 2)
 
 -- Backend options
-cmd:option('-gpu', 0)
+cmd:option('-gpu', 1)
 cmd:option('-use_cudnn', 1)
 
 -- Output options

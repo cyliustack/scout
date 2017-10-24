@@ -1,3 +1,4 @@
+#!/opt/anaconda2/bin/python
 import os, json, itertools, random, argparse
 
 DEFAULT_MODELS = ','.join([
@@ -22,7 +23,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--gpus', default='0')
 parser.add_argument('--models', default=DEFAULT_MODELS)
 parser.add_argument('--batch_sizes', default='16')
-parser.add_argument('--use_cudnns', default='0,1')
+parser.add_argument('--use_cudnns', default='1')
 parser.add_argument('--output_dir', default='outputs')
 
 
