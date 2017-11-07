@@ -12,7 +12,7 @@ cmd:option('-image_width', 224)
 cmd:option('-batch_size', 16)
 
 -- Benchmark options
-cmd:option('-num_passes', 2)
+cmd:option('-num_passes', 4)
 
 -- Backend options
 cmd:option('-gpu', 1)

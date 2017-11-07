@@ -17,7 +17,8 @@ else
 	echo " " >  ${logfile}
 	for (( bs=${bs_begin}; bs<=${bs_end}; bs*=2 ))
 	do  
-		echo "Run ${modle} on GPUx${num_gpus} with batch-size ${bs} : "
+		total_bs=$(( bs * num_gpus ))
+		echo "Run ${modle} on GPUx${num_gpus} with batch-size ${bs} on each GPU, total batch-size is ${total_bs} : "
 		./tools/gpu-train.sh	${model}	${bs}	${num_gpus}	"${options}"	1>> ${logfile}
 	done
 	cat ${logfile} | grep "total images/sec:" |  awk '{ print $3; print ","; }'  | xargs
