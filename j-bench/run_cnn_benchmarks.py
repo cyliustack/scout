@@ -10,12 +10,12 @@ import os, json, itertools, random, argparse
 
 DEFAULT_MODELS = ','.join([
   'models/alexnet.t7',
-  'models/vgg16.t7',
-  'models/vgg16/vgg19.t7',
-  'models/googlenet-v1.t7',
-  'models/resnet-50.t7',
-  'models/resnet-101.t7',
-  'models/resnet-200.t7',
+  #'models/vgg16.t7',
+  #'models/vgg16/vgg19.t7',
+  #'models/googlenet-v1.t7',
+  #'models/resnet-50.t7',
+  #'models/resnet-101.t7',
+  #'models/resnet-200.t7',
 ])
 
 parser = argparse.ArgumentParser()
