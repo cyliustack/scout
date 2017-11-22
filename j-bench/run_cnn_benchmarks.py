@@ -1,4 +1,4 @@
-#!/opt/anaconda2/bin/python
+#!/usr/bin/python
 import os, json, itertools, random, argparse
 #DEFAULT_MODELS = ','.join([
 #  'models/alexnet/alexnet.t7'
@@ -9,13 +9,13 @@ import os, json, itertools, random, argparse
 #])
 
 DEFAULT_MODELS = ','.join([
-  'models/alexnet/alexnet.t7',
-  'models/vgg16/vgg16.t7',
+  'models/alexnet.t7',
+  'models/vgg16.t7',
   'models/vgg16/vgg19.t7',
-  'models/googlenet/googlenet-v1.t7',
-  'models/resnets/resnet-50.t7',
-  'models/resnets/resnet-101.t7',
-  'models/resnets/resnet-200.t7',
+  'models/googlenet-v1.t7',
+  'models/resnet-50.t7',
+  'models/resnet-101.t7',
+  'models/resnet-200.t7',
 ])
 
 parser = argparse.ArgumentParser()
@@ -23,7 +23,7 @@ parser.add_argument('--gpus', default='0')
 parser.add_argument('--models', default=DEFAULT_MODELS)
 parser.add_argument('--batch_sizes', default='16')
 parser.add_argument('--use_cudnns', default='1')
-parser.add_argument('--output_dir', default='hgx1_outputs')
+parser.add_argument('--output_dir', default='outputs')
 
 
 def main(args):
