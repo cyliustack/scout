@@ -1285,9 +1285,11 @@ class BenchmarkCNN(object):
        for dim in shape:
            #print(dim)
            variable_parameters *= dim.value
-       print(variable_parameters)
+       #print(variable_parameters)
        total_parameters += variable_parameters
-    log_fn("[INFO] %d " % total_parameters)
+    log_fn("[INFO] number of parameters: %d " % total_parameters)
+    log_fn("[INFO] number of layers %d " % n_layers)
+
 
 
     return (image_producer_ops, enqueue_ops, fetches)
