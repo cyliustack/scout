@@ -1,99 +1,80 @@
-# Human-Level Control through Deep Reinforcement Learning
+# Deep Reinforcement Learning in TensorFlow
 
-Tensorflow implementation of [Human-Level Control through Deep Reinforcement Learning](http://home.uchicago.edu/~arij/journalclub/papers/2015_Mnih_et_al.pdf).
+TensorFlow implementation of Deep Reinforcement Learning papers. This implementation contains:
 
-![model](assets/model.png)
-
-This implementation contains:
-
-1. Deep Q-network and Q-learning
-2. Experience replay memory
-    - to reduce the correlations between consecutive updates
-3. Network for Q-learning targets are fixed for intervals
-    - to reduce the correlations between target and predicted Q-values
+[1] [Playing Atari with Deep Reinforcement Learning](http://arxiv.org/abs/1312.5602)  
+[2] [Human-Level Control through Deep Reinforcement Learning](http://home.uchicago.edu/~arij/journalclub/papers/2015_Mnih_et_al.pdf)  
+[3] [Deep Reinforcement Learning with Double Q-learning](http://arxiv.org/abs/1509.06461)  
+[4] [Dueling Network Architectures for Deep Reinforcement Learning](http://arxiv.org/abs/1511.06581)  
+[5] [Prioritized Experience Replay](http://arxiv.org/pdf/1511.05952v3.pdf) (in progress)  
+[6] [Deep Exploration via Bootstrapped DQN](http://arxiv.org/abs/1602.04621) (in progress)  
+[7] [Asynchronous Methods for Deep Reinforcement Learning](http://arxiv.org/abs/1602.01783) (in progress)  
+[8] [Continuous Deep q-Learning with Model-based Acceleration](http://arxiv.org/abs/1603.00748) (in progress)  
 
 
 ## Requirements
 
-- Python 2.7 or Python 3.3+
+- Python 2.7
 - [gym](https://github.com/openai/gym)
 - [tqdm](https://github.com/tqdm/tqdm)
-- [SciPy](http://www.scipy.org/install.html) or [OpenCV2](http://opencv.org/)
-- [TensorFlow 0.12.0](https://github.com/tensorflow/tensorflow/tree/r0.12)
+- [OpenCV2](http://opencv.org/) or [Scipy](https://www.scipy.org/)
+- [TensorFlow 0.12.0](https://www.tensorflow.org/)
 
 
 ## Usage
 
 First, install prerequisites with:
 
-    $ pip install tqdm gym[all]
+    $ pip install -U 'gym[all]' tqdm scipy
 
-To train a model for Breakout:
+Don't forget to also install the latest
+[TensorFlow](https://www.tensorflow.org/). Also note that you need to install
+the dependences of [`doom-py`](https://github.com/openai/doom-py) which is
+required by `gym[all]`
 
-    $ python main.py --env_name=Breakout-v0 --is_train=True
-    $ python main.py --env_name=Breakout-v0 --is_train=True --display=True
+Train with DQN model described in [[1]](#deep-reinforcement-learning-in-tensorflow) without gpu:
 
-To test and record the screen with gym:
+    $ python main.py --network_header_type=nips --env_name=Breakout-v0 --use_gpu=False
 
-    $ python main.py --is_train=False
-    $ python main.py --is_train=False --display=True
+Train with DQN model described in [[2]](#deep-reinforcement-learning-in-tensorflow):
+
+    $ python main.py --network_header_type=nature --env_name=Breakout-v0
+
+Train with Double DQN model described in [[3]](#deep-reinforcement-learning-in-tensorflow):
+
+    $ python main.py --double_q=True --env_name=Breakout-v0
+
+Train with Deuling network with Double Q-learning described in [[4]](#deep-reinforcement-learning-in-tensorflow):
+
+    $ python main.py --double_q=True --network_output_type=dueling --env_name=Breakout-v0
+
+Train with MLP model described in [[4]](#deep-reinforcement-learning-in-tensorflow) with corridor environment (useful for debugging):
+
+    $ python main.py --network_header_type=mlp --network_output_type=normal --observation_dims='[16]' --env_name=CorridorSmall-v5 --t_learn_start=0.1 --learning_rate_decay_step=0.1 --history_length=1 --n_action_repeat=1 --t_ep_end=10 --display=True --learning_rate=0.025 --learning_rate_minimum=0.0025
+    $ python main.py --network_header_type=mlp --network_output_type=normal --double_q=True --observation_dims='[16]' --env_name=CorridorSmall-v5 --t_learn_start=0.1 --learning_rate_decay_step=0.1 --history_length=1 --n_action_repeat=1 --t_ep_end=10 --display=True --learning_rate=0.025 --learning_rate_minimum=0.0025
+    $ python main.py --network_header_type=mlp --network_output_type=dueling --observation_dims='[16]' --env_name=CorridorSmall-v5 --t_learn_start=0.1 --learning_rate_decay_step=0.1 --history_length=1 --n_action_repeat=1 --t_ep_end=10 --display=True --learning_rate=0.025 --learning_rate_minimum=0.0025
+    $ python main.py --network_header_type=mlp --network_output_type=dueling --double_q=True --observation_dims='[16]' --env_name=CorridorSmall-v5 --t_learn_start=0.1 --learning_rate_decay_step=0.1 --history_length=1 --n_action_repeat=1 --t_ep_end=10 --display=True --learning_rate=0.025 --learning_rate_minimum=0.0025
 
 
 ## Results
 
-Result of training for 24 hours using GTX 980 ti.
+Result of `Corridor-v5` in [[4]](#deep-reinforcement-learning-in-tensorflow) for DQN (purple), DDQN (red), Dueling DQN (green), Dueling DDQN (blue).
 
-![best](assets/best.gif)
+![model](assets/corridor_result.png)
 
+Result of `Breakout-v0' for DQN without frame-skip (white-blue), DQN with frame-skip (light purple), Dueling DDQN (dark blue).
 
-## Simple Results
+![model](assets/A1_A4_double_dueling.png)
 
-Details of `Breakout` with model `m2`(red) for 30 hours using GTX 980 Ti.
-
-![tensorboard](assets/0620_scalar_step_m2.png)
-
-Details of `Breakout` with model `m3`(red) for 30 hours using GTX 980 Ti.
-
-![tensorboard](assets/0620_scalar_step_m3.png)
-
-
-## Detailed Results
-
-**[1] Action-repeat (frame-skip) of 1, 2, and 4 without learning rate decay**
-
-![A1_A2_A4_0.00025lr](assets/A1_A2_A4_0.00025lr.png)
-
-**[2] Action-repeat (frame-skip) of 1, 2, and 4 with learning rate decay**
-
-![A1_A2_A4_0.0025lr](assets/A1_A2_A4_0.0025lr.png)
-
-**[1] & [2]**
-
-![A1_A2_A4_0.00025lr_0.0025lr](assets/A1_A2_A4_0.00025lr_0.0025lr.png)
-
-
-**[3] Action-repeat of 4 for DQN (dark blue) Dueling DQN (dark green) DDQN (brown) Dueling DDQN (turquoise)**
-
-The current hyper parameters and gradient clipping are not implemented as it is in the paper.
-
-![A4_duel_double](assets/A4_duel_double.png)
-
-
-**[4] Distributed action-repeat (frame-skip) of 1 without learning rate decay**
-
-![A1_0.00025lr_distributed](assets/A4_0.00025lr_distributed.png)
-
-**[5] Distributed action-repeat (frame-skip) of 4 without learning rate decay**
-
-![A4_0.00025lr_distributed](assets/A4_0.00025lr_distributed.png)
+The hyperparameters and gradient clipping are not implemented as it is as [[4]](#deep-reinforcement-learning-in-tensorflow).
 
 
 ## References
 
-- [simple_dqn](https://github.com/tambetm/simple_dqn.git)
-- [Code for Human-level control through deep reinforcement learning](https://sites.google.com/a/deepmind.com/dqn/)
+- [DQN-tensorflow](https://github.com/devsisters/DQN-tensorflow)
+- [DeepMind's code](https://sites.google.com/a/deepmind.com/dqn/)
 
 
-## License
+## Author
 
-MIT License.
+Taehoon Kim / [@carpedm20](http://carpedm20.github.io/)
