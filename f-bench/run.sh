@@ -26,4 +26,5 @@ elif [[ "$model" == "speech" ]]; then
 					                --epoch 50 \
 elif [[ "$model" == "autoenc" ]]; then
 	${BASE_DIR}/tfenv/autoenc/python autoenc/run_main.py --dim_z 20
+ 
 fi 
