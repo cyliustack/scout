@@ -7,6 +7,7 @@ import plot_utils
 import glob
 
 import argparse
+import errno
 
 IMAGE_SIZE_MNIST = 28
 
@@ -68,8 +69,11 @@ def check_args(args):
     # --results_path
     try:
         os.mkdir(args.results_path)
-    except(FileExistsError):
-        pass
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            print('Directory not created.')
+        else:
+            raise
     # delete all existing files
     files = glob.glob(args.results_path+'/*')
     for f in files:
@@ -320,4 +324,8 @@ if __name__ == '__main__':
         exit()
 
     # main
+<<<<<<< HEAD
     main(args)
+=======
+    main(args)
+>>>>>>> 81a1f3c649b94f43736e4599d8f1046a54e3d7b9
