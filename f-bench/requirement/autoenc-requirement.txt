@@ -1,0 +1,5 @@
+scipy
+numpy
+pillow
+matplotlib
+tensorflow-gpu==0.12

@@ -41,13 +41,13 @@ os_found=true
 
 if [[ $OS == "Ubuntu" ]]; then
 	echo "This is Ubuntu "
-	sudo apt-get install libboost-dev libpcap-dev libconfig-dev libconfig++-dev linux-tools-common linux-tools-$(uname -r) linux-cloud-tools-$(uname -r)  linux-tools-generic linux-cloud-tools-generic cmake python-pip python-dev	
+	sudo apt-get install libboost-dev libpcap-dev libconfig-dev libconfig++-dev linux-tools-common linux-tools-$(uname -r) linux-cloud-tools-$(uname -r)  linux-tools-generic linux-cloud-tools-generic cmake python-pip python-dev	python3-tk
 elif [[ $OS == "CentOS Linux" ]]; then
     echo "This is CentOS"
-    sudo yum install perf cmake libpcap-devel libconfig-devel boost-devel install centos-release-scl devtoolset-4-gcc* python-pip python-devel libxml2-dev libxslt-dev
+    sudo yum install perf cmake libpcap-devel libconfig-devel boost-devel install centos-release-scl devtoolset-4-gcc* python-pip python-devel libxml2-dev libxslt-dev tkinter
 elif [[ $OS == "Fedora" ]]; then
 	echo "This Fedora "
-    sudo dnf -y install perf boost-devel libconfig-devel libpcap-devel cmake python-pip python-devel
+    sudo dnf -y install perf boost-devel libconfig-devel libpcap-devel cmake python-pip python-devel python3-tkinter
 else
 	os_found=false
 fi
@@ -68,9 +68,22 @@ sudo pip install virtualenv
 mkdir -p "${BASE_DIR}/tfenv"
 mkdir -p "${BASE_DIR}/tfenv/seq2seq"
 mkdir -p "${BASE_DIR}/tfenv/memnet"
+mkdir -p "${BASE_DIR}/tfenv/deepq"
+mkdir -p "${BASE_DIR}/tfenv/autoenc"
+mkdir -p "${BASE_DIR}/tfenv/speech"
 virtualenv -q "${BASE_DIR}/tfenv/seq2seq"
 virtualenv -q "${BASE_DIR}/tfenv/memnet"
+virtualenv -q "${BASE_DIR}/tfenv/deepq"
+virtualenv -q "${BASE_DIR}/tfenv/autoenc"
+virtualenv -q "${BASE_DIR}/tfenv/speech"
 ${BASE_DIR}/tfenv/seq2seq/bin/pip install -U pip
-${BASE_DIR}/tfenv/seq2seq/bin/pip install -r seq2seq-requirement.txt
+${BASE_DIR}/tfenv/seq2seq/bin/pip install -r requirement/seq2seq-requirement.txt
 ${BASE_DIR}/tfenv/memnet/bin/pip install -U pip
-${BASE_DIR}/tfenv/memnet/bin/pip install -r memnet-requirement.txt
+${BASE_DIR}/tfenv/memnet/bin/pip install -r requirement/memnet-requirement.txt
+${BASE_DIR}/tfenv/deepq/bin/pip install -U pip
+${BASE_DIR}/tfenv/deepq/bin/pip install -r requirement/deepq-requirement.txt
+${BASE_DIR}/tfenv/autoenc/bin/pip install -U pip
+${BASE_DIR}/tfenv/autoenc/bin/pip install -r requirement/autoenc-requirement.txt
+${BASE_DIR}/tfenv/speech/bin/pip install -U pip
+${BASE_DIR}/tfenv/speech/bin/pip install -r requirement/speech-requirement.txt
+python ${BASE_DIR}/speech/util/taskcluster.py --target ./native-client --arch gpu 

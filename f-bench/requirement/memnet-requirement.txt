@@ -1,0 +1,3 @@
+future
+progress
+tensorflow-gpu
