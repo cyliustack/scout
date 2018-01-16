@@ -1,3 +1,0 @@
-[submodule "tbench"]
-	path = t-bench
-	url = https://github.com/cyliustack/benchmarks.git
