@@ -55,9 +55,9 @@ if __name__ == "__main__":
         print('Execute %s'%benchmark)
         subprocess.call(['mkdir', '-p', logdir])
         if program_args != None:
-            os.chdir(benchmark)
+            os.chdir('t-bench/scripts/tf_cnn_benchmarks')
             subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=1', '--local_parameter_device=cpu', '--num_batches=10'])
-            os.chdir('..')
+            os.chdir(sys.path[0])
     else:
         print('no benchmark is specified')
 
