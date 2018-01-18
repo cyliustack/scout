@@ -10,10 +10,16 @@ Authors: James Liu (cyliustack@gmail.com),  Ryan Wei (sjeemb@gmail.com)
 If you want to use profiling tool SOFA, please download it from https://github.com/cyliustack/sofa.git   
   
 
-# Usage   
+# Usage: Basic Benchmarking 
 ```
 ./scout t-bench resnet50
 ./scout t-bench resnet50 --metric=sofa_standard
 ./scout j-bench alexnet
 ./scout f-bench seq2seq
+```
+
+# Usage: Advanced Platform Profiling 
+```
+./tools/p2p-trace.py record --max_num_gpus=8
+./tools/p2p-trace.py report
 ```

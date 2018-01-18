@@ -19,6 +19,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Xring Modeling')
     parser.add_argument('--logdir', metavar="/path/to/logdir/", type=str, required=False, 
                     help='path to the directory of profiling log files')
+    parser.add_argument('--model', metavar="model_name", type=str, required=False,
+                    help='specify a DNN model [alexnet|inception3|resnet50|vgg16] ')
     parser.add_argument('--max_num_gpus', metavar="N", type=int, required=False,
                     help='specify maximum number of GPUs to model')
     parser.add_argument('--metric', type=str, required=False, metavar='metric',
@@ -29,13 +31,23 @@ if __name__ == "__main__":
     logfile = 'xring-report.txt' 
     args = parser.parse_args()
     command = args.command[0]
-    max_num_gpus = args.max_num_gpus
+
+    if args.model != None:
+        model = args.model
+    else:
+        model = 'vgg16'
+
+
+    if args.max_num_gpus != None:
+        max_num_gpus = args.max_num_gpus
+    else:
+        max_num_gpus = 8
 
     if command == 'record':
         os.system("echo XRING TEST > "+logfile)  
         for i in range(1,max_num_gpus):
             print("Test xring for GPUx%d" % (i+1) )
-            os.system("sofa stat  python tf_cnn_benchmarks.py --model=vgg16 --batch_size=64 --variable_update=replicated --num_gpus=%d --local_parameter_device=gpu --num_batches=10 --all_reduce_spec=xring 1>> %s " % ( i+1, logfile ) )
+            os.system("sofa stat  python tf_cnn_benchmarks.py --model=%s --batch_size=64 --variable_update=replicated --num_gpus=%d --local_parameter_device=gpu --num_batches=10 --all_reduce_spec=xring 1>> %s " % ( model, i+1, logfile ) )
         
     if command == 'report':
         total_traffic = []
