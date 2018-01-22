@@ -31,6 +31,8 @@ if __name__ == "__main__":
                     help='path to the directory of configuration file')
     parser.add_argument('--metric', type=str, required=False, metavar='metric',
                     help='performance metric, like hotspot, memory pressure')
+    parser.add_argument('--num_gpus', type=int, required=False, metavar='n_GPUs',
+                    help='number of GPUs')
     parser.add_argument('benchmark', type=str, nargs=1, metavar='benchmark_suite',
             help='specify a benchmark to run: e.g. f-bench, j-bench, t-bench')
     #    parser.add_argument('sofa-benchmark', nargs=1, metavar='[record|report|preprocess|analyze|visualize]')
@@ -41,6 +43,11 @@ if __name__ == "__main__":
     logdir=os.getcwd()+'/scoutlog'
     if args.logdir != None:
         logdir = args.logdir
+    if args.num_gpus != None:
+        num_gpus = args.num_gpus
+    else:
+        num_gpus = 8
+    
     benchmark = args.benchmark[0]
     program = args.program[0]
     metric = args.metric
@@ -56,7 +63,11 @@ if __name__ == "__main__":
         subprocess.call(['mkdir', '-p', logdir])
         if program_args != None:
             os.chdir('t-bench/scripts/tf_cnn_benchmarks')
-            subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=1', '--local_parameter_device=cpu', '--num_batches=10'])
+            if program == "vgg16":
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=10','--all_reduce_spec=xring'])
+            if program == "resnet50":
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=10','--all_reduce_spec=nccl'])
+            
             os.chdir(sys.path[0])
     else:
         print('no benchmark is specified')
