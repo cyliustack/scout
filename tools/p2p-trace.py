@@ -17,8 +17,8 @@ from functools import partial
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Xring Modeling')
-    parser.add_argument('--logfile', metavar="/path/to/logfile", type=str, required=False, 
-                    help='path to the profiling log files')
+    parser.add_argument('--logdir', metavar="/path/to/logdir", type=str, required=False, 
+                    help='path to the directory which contains log files')
     parser.add_argument('--max_num_gpus', metavar="N", type=int, required=False,
                     help='specify the maximum number of GPUs to model')
     parser.add_argument('--model', metavar="model_name", type=str, required=False,
@@ -28,13 +28,16 @@ if __name__ == "__main__":
     parser.add_argument('command', type=str, nargs=1, metavar='command',
             help='specify a command: [record|report]')
  
-    logfile = 'p2ptrace.csv' 
+
     args = parser.parse_args()
     command = args.command[0]
+        
+    logdir = "./scoutlog"
+    if args.logdir != None:
+        logdir = args.logdir
 
-    if args.logfile != None:
-        logfile = args.logfile
-
+    logfile = logdir+"/"+'p2ptrace.csv' 
+    
     if args.max_num_gpus != None:
         max_num_gpus = args.max_num_gpus
     else:
@@ -46,7 +49,9 @@ if __name__ == "__main__":
         model = 'vgg16'
 
     if command == 'record':
-        os.system("nvprof --print-gpu-trace --unified-memory-profiling per-process-device --profile-child-processes --csv --log-file p2ptrace-%%p.csv ./scout t-bench %s --num_gpus=%d && mv p2ptrace-*.csv p2ptrace.csv" % (model, max_num_gpus) )
+        os.system("mkdir -p %s" % logdir)
+        os.system("rm %s/p2ptrace*.csv" % logdir)
+        os.system("nvprof --print-gpu-trace --unified-memory-profiling per-process-device --profile-child-processes --csv --log-file %s/p2ptrace-%%p.csv ./scout t-bench %s --num_gpus=%d && mv %s/p2ptrace-*.csv %s/p2ptrace.csv" % (logdir, model, max_num_gpus, logdir, logdir ) )
         
     if command == 'report':
         df = []
@@ -95,4 +100,4 @@ if __name__ == "__main__":
                 #print("[D2H] From %d to Host" % ( df.iat[i,14] ) )
         print(heatmap)
             
-        os.system("rm p2ptrace*.tmp")
+        os.system("rm %s.tmp"%logfile)
