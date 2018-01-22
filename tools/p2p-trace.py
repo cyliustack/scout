@@ -106,7 +106,7 @@ if __name__ == "__main__":
                 c = int(df.iat[i,19])-1
                 heatmap[r][c] = heatmap[r][c] + 1
                 #print("[P2P] From %d to %d" % ( df.iat[i,17], df.iat[i,19] ) )
-        hm_p2p = heatmap
+        hm_p2p = heatmap.copy()
         print(hm_p2p)
 
         print('[HtoD Info]')
@@ -114,9 +114,9 @@ if __name__ == "__main__":
         for i in range(len(df)):
             if df.iloc[i,20] == '[CUDA memcpy HtoD]':
                 index = int(df.iat[i,14])-1
-                heatmap[index] = heatmap[index] + 0
+                heatmap[index] = heatmap[index] + 1
                 #print("[H2D] From Host to %d" % ( df.iat[i,14] ) )
-        hm_h2d = heatmap
+        hm_h2d = heatmap.copy()
         print(hm_h2d)
 
          
@@ -127,7 +127,7 @@ if __name__ == "__main__":
                 index = int(df.iat[i,14])-1
                 heatmap[index] = heatmap[index] + 1
                 #print("[D2H] From %d to Host" % ( df.iat[i,14] ) )
-        hm_d2h = heatmap
+        hm_d2h = heatmap.copy()
         print(hm_d2h)
 
       
@@ -138,10 +138,15 @@ if __name__ == "__main__":
         nodes.append({'name': 'Host','group':'0'})
         for i in range(num_gpus): 
             nodes.append({'name': 'GPU%d'%i,'group':i/4+1})
+            if hm_h2d[i] > np.max(hm_h2d)/2:
+                links.append({'source': 0, 'target':i+1, 'weight':5})
+            if hm_d2h[i] > np.max(hm_d2h)/2:
+                links.append({'source': i+1, 'target':0, 'weight':5})
+                  
         for i in range(num_gpus):
             for j in range(num_gpus):
-                if hm_p2p[i][j] > 1000:
-                    links.append({'source': i, 'target':j, 'weight':1}) 
+                if hm_p2p[i][j] > np.max(hm_p2p)/2:
+                    links.append({'source': i+1, 'target':j+1, 'weight':1}) 
         graph = { 'nodes': nodes, 'links': links }        
 
         with open('graphFile.json','w') as f:
@@ -159,6 +164,45 @@ if __name__ == "__main__":
 #        {"source":0,"target":2,"weight":3}
 #    ]
 #} 
+        import networkx as nx
+        import numpy as np
+        import matplotlib.pyplot as plt
+        import pylab
         
-            
+        G = nx.DiGraph()
+ 
+        for i in range(num_gpus): 
+            if hm_h2d[i] > np.max(hm_h2d)/2:
+                G.add_edges_from([('H','G%d'%i)], weight=1)
+            if hm_d2h[i] > np.max(hm_d2h)/2:
+                G.add_edges_from([('G%d'%i,'H')], weight=1)
+        for i in range(num_gpus):
+            for j in range(num_gpus):
+                if hm_p2p[i][j] > np.max(hm_p2p)/2:
+                    G.add_edges_from([('G%d'%i,'G%d'%j)], weight=1)
+        
+#        G.add_edges_from([('G%d'%i,'G%d'%j), weight=1)
+#        G.add_edges_from([('D','A'),('D','E'),('B','D'),('D','E')], weight=2)
+#        G.add_edges_from([('B','C'),('E','F')], weight=3)
+#        G.add_edges_from([('C','F')], weight=4)
+#        
+        
+        val_map = {'A': 1.0,
+                           'D': 0.5714285714285714,
+                                      'H': 0.0}
+        
+        values = [val_map.get(node, 0.45) for node in G.nodes()]
+        edge_labels=dict([((u,v,),d['weight'])
+                         for u,v,d in G.edges(data=True)])
+        red_edges = [('C','D'),('D','A')]
+        edge_colors = ['black' if not edge in red_edges else 'red' for edge in G.edges()]
+        
+        pos=nx.spring_layout(G)
+        nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_labels)
+        nx.draw(G,pos, node_color = values, node_size=1500,edge_color=edge_colors,edge_cmap=plt.cm.Reds)
+        pylab.show()
+        pylab.savefig("Graph.png", format="PNG")            
+        
+        os.system("cp graphFile.json %s"%logdir)
+        os.system("cp tools/interconnection.html %s"%logdir)
         os.system("rm %s.tmp"%logfile)
