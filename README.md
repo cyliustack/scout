@@ -8,7 +8,15 @@ This benchmark suite will include t-bench, j-bench, and f-bench.
 Authors: James Liu (cyliustack@gmail.com),  Ryan Wei (sjeemb@gmail.com)   
 # Prerequisite
 If you want to use profiling tool SOFA, please download it from https://github.com/cyliustack/sofa.git   
-  
+
+# Install
+```
+git submodule init
+git submodule update
+pushd t-bench
+git pull origin master
+popd
+```  
 
 # Usage: Basic Benchmarking 
 ```
