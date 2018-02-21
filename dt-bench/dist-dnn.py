@@ -69,5 +69,5 @@ if __name__ == "__main__":
     
     subprocess.call(['mkdir', '-p', logdir])
     with open('%s/scout.log'%logdir, 'w') as logfile:
-#        subprocess.call(['pssh', '-PH', '"%s"'%servers, 'hostname' ],stdout=logfile)
         subprocess.call(['hostname'])
+	#subprocess.call(['python', '../t-bench/scripts/tf_dnn_benchmarks/tf_benchmarkrs.py'])

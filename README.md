@@ -24,6 +24,7 @@ popd
 ./scout t-bench resnet50 --metric=sofa_standard
 ./scout j-bench alexnet
 ./scout f-bench seq2seq
+./scout dt-bench ps:alexnet  
 ```
 
 # Usage: Advanced Platform Profiling 

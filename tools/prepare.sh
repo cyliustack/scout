@@ -1,6 +1,6 @@
 #!/bin/bash
 # Install Required Python Packages
-sudo pip install numpy scipy scikit-learn six pylint librosa h5py xlsxwriter
+sudo pip install numpy scipy scikit-learn six pylint librosa h5py xlsxwriter pssh
 
 # Install OpenCV: reference link -> https://docs.opencv.org/2.4/doc/tutorials/introduction/linux_install/linux_install.html
 sudo apt-get install build-essential
