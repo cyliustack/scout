@@ -44,7 +44,7 @@ def print_progress(content):
 if __name__ == "__main__":
     
     logdir   = './scoutlog/' 
-    command = None
+    sync = None
     model = None
     hostfile = 'hostfile.txt'
     sys.stdout.flush() 
@@ -52,22 +52,22 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='DT-Bench')
     parser.add_argument('--logdir', metavar='/path/to/logdir/', type=str, required=False, 
                     help='path to the directory of dt-bench logged files')
-    parser.add_argument('command', type=str, nargs=1, metavar='<ps|replicated>')
+    parser.add_argument('sync', type=str, nargs=1, metavar='<ps|replicated>')
     parser.add_argument('model', type=str, nargs=1, metavar='<alexnet|vgg16|resnet50>')
 
     args = parser.parse_args()
     if args.logdir != None:
         logdir = args.logdir + '/'
     
-    if args.command != None:
-        command = args.command[0]
+    if args.sync != None:
+        sync = args.sync[0]
     if args.model != None:
         model = args.model[0]
     print_info("logdir = %s" % logdir )
-    print_info("command = %s" % command )
+    print_info("sync = %s" % sync )
     print_info("model = %s" % model )
     
     subprocess.call(['mkdir', '-p', logdir])
     with open('%s/scout.log'%logdir, 'w') as logfile:
 #        subprocess.call(['pssh', '-PH', '"%s"'%servers, 'hostname' ],stdout=logfile)
-        subprocess.call(['pssh', '-h', 'hostfile.txt', 'hostname' ])
+        subprocess.call(['hostname'])

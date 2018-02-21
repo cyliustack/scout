@@ -69,6 +69,12 @@ if __name__ == "__main__":
                 subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=10','--all_reduce_spec=nccl'])
             
             os.chdir(sys.path[0])
+    if benchmark == 'dt-bench':
+        print('Execute %s'%benchmark)
+	sync = program.split(':')[0] 
+	dnn_model = program.split(':')[1]
+	print('sync=%s, model=%s' % (sync, dnn_model) )
+    	subprocess.call(['pssh', '-h', 'hostfile.txt', 'python', '~/scout/dt-bench/dist-dnn.py', sync, dnn_model])
     else:
         print('no benchmark is specified')
 
