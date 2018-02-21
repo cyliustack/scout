@@ -17,3 +17,5 @@ sudo make install
 
 # Reqirements for using j-bench
 wget "https://drive.google.com/uc?id=0Byvt-AfX75o1STUxZTFpMU10djA&export=download"
+
+git submodule init && git submodule update && pushd t-bench && git pull origin master  && popd
