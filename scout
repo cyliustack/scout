@@ -33,10 +33,10 @@ if __name__ == "__main__":
                     help='performance metric, like hotspot, memory pressure')
     parser.add_argument('--num_gpus', type=int, required=False, metavar='n_GPUs',
                     help='number of GPUs')
-    parser.add_argument('benchmark', type=str, nargs=1, metavar='benchmark_suite',
+    parser.add_argument('benchmark', type=str, nargs=1, metavar='<BENCHMARK_SUITE>',
             help='specify a benchmark to run: e.g. f-bench, j-bench, t-bench')
     #    parser.add_argument('sofa-benchmark', nargs=1, metavar='[record|report|preprocess|analyze|visualize]')
-    parser.add_argument('program', type=str, nargs=1, metavar='program')
+    parser.add_argument('program', type=str, nargs=1, metavar='<PROGRAM>')
     #parser.add_argument('program_args', type=str, nargs='*', metavar='program_args')
    
     args = parser.parse_args()
@@ -71,10 +71,13 @@ if __name__ == "__main__":
             os.chdir(sys.path[0])
     if benchmark == 'dt-bench':
         print('Execute %s'%benchmark)
-	sync = program.split(':')[0] 
-	dnn_model = program.split(':')[1]
-	print('sync=%s, model=%s' % (sync, dnn_model) )
-    	subprocess.call(['pssh', '-h', 'hostfile.txt', 'python', '~/scout/dt-bench/dist-dnn.py', sync, dnn_model])
+	if program.find(':') != -1:
+		sync = program.split(':')[0] 
+		dnn_model = program.split(':')[1]
+		print('sync=%s, model=%s' % (sync, dnn_model) )
+    		subprocess.call(['pssh', '-h', 'hostfile.txt', 'python', '~/scout/dt-bench/dist-dnn.py', sync, dnn_model])
+	else:
+		print_error('format of <PROGRAM> should be like "ps:alexnet"')
     else:
         print('no benchmark is specified')
 

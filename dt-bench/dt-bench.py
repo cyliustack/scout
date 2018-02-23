@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import os
 import xlsxwriter
 import random
@@ -6,27 +7,31 @@ import time
 # multimachine benchmarks configure
 #-----------------------------------------------------------------------------------
 
-models = ['resnet50', 'resnet152', 'inception3', 'alexnet', 'vgg16']
+#models = ['resnet50', 'resnet152', 'inception3', 'alexnet', 'vgg16']
+models = ['resnet50']
 gpu_number = 1
+num_batches = 10
 
 # you can modify variable_update to ['parameter_server', 'distributed_replicated']
-variable_update = ['parameter_server', 'distributed_replicated']
-max_batch_size = 64
+# variable_update = ['parameter_server', 'distributed_replicated']
+variable_update = ['distributed_replicated']
+min_batch_size = 16 
+max_batch_size = 16
 
-ps = ['jingpu@140.112.90.36', 'jingpu@140.112.90.37']
-worker = ['jingpu@140.112.90.36', 'jingpu@140.112.90.37']
+ps = ['node0','node1']
+worker = ['node0','node1']
 
 # Device to use  as parameter server: cpu or gpu
 local_parameter_device = 'gpu'
 
 # end of address do not include '/'
-remote_log_file_address = '/home/jingpu/yihong/dt-bench-log-2'
-local_log_address = '/home/hong/dt-bench-log'
-file_address = '/home/jingpu/benchmarks/scripts/tf_cnn_benchmarks/tf_cnn_benchmarks.py'
+remote_log_file_address = '~/dt-bench-log-r'
+local_log_address = '~/dt-bench-log-l'
+file_address = '~/scout/t-bench/scripts/tf_cnn_benchmarks/tf_cnn_benchmarks.py'
 
 # if you don't need to use virtualenv, modify to ''
 # virtualenv example = '/home/hong/virtialenv_dir/bin/' 
-virtualenv = '~/gdr_test/bin/'
+virtualenv = ''
 
 # -----------------------------------------------------------------------------------
 
@@ -38,7 +43,7 @@ def doubling_range(start, stop):
 
 # result_array prepare for the excel
 batch_num_array = []
-for i in doubling_range(1, (max_batch_size + 1)):
+for i in doubling_range(min_batch_size, (max_batch_size + 1)):
 	batch_num_array.append(i)
 batch_num = len(batch_num_array) + 1
 
@@ -93,33 +98,38 @@ mv_cmd = 'mv -T ' + str(os.path.basename(remote_log_file_address)) + ' ' + str(o
 
 # split aaa@1.1.1.1 to 1.1.1.1:80 , and combine worker and ps cmd
 for i in range(len(ps)):
-    ps_p[i] = ps[i].split('@')[1] + ':' + str(ps_rand)
+#    ps_p[i] = ps[i].split('@')[1] + ':' + str(ps_rand)
+    ps_p[i] = ps[i] + ':' + str(ps_rand)
 ps_cmd = ','.join(ps_p)
 
 for i in range(len(worker)):
-    worker_p[i] = worker[i].split('@')[1] + ':' + str(worker_rand)
+#    worker_p[i] = worker[i].split('@')[1] + ':' + str(worker_rand)
+    worker_p[i] = worker[i] + ':' + str(worker_rand)
 worker_cmd = ','.join(worker_p)
 
 for variable in variable_update:
 	for model in models: 
-    		for i in doubling_range(1, (max_batch_size + 1)):
+    		for i in doubling_range(min_batch_size, (max_batch_size + 1)):
                         for a in range(len(ps)):
                             cmd_list[a] = 'ssh ' + ps[a] + ' \'' + virtualenv + \
                                           'python ' + str(file_address) + \
                                           ' --model='+ str(model) + \
                                           ' --batch_size=' + str(i) + \
+                                          ' --num_batches=' + str(num_batches) + \
                                           ' --num_gpus=' + str(gpu_number) + \
                                           ' --variable_update=' + str(variable) + \
                                           ' --job_name=ps' + \
 					  ' --local_parameter_device=' + local_parameter_device + \
                                           ' --ps_hosts=' + ps_cmd  + \
                                           ' --worker_hosts=' + worker_cmd + \
-                                          ' --task_index=' + str(a) + '\' &'
+                                          ' --task_index=' + str(a) + \
+					  ' 2> /dev/null' + '\' &'
                         for b in range(len(worker) -1):
 	                    cmd_list[len(ps)+b] ='ssh ' + worker[b] + ' \'' + virtualenv + \
                                           'python ' + str(file_address) + \
                                           ' --model='+ str(model) + \
                                           ' --batch_size=' + str(i) + \
+                                          ' --num_batches=' + str(num_batches) + \
                                           ' --num_gpus=' + str(gpu_number) + \
                                           ' --variable_update=' + str(variable) + \
                                           ' --job_name=worker' + \
@@ -127,12 +137,14 @@ for variable in variable_update:
                                           ' --ps_hosts=' + ps_cmd + \
                                           ' --worker_hosts=' + worker_cmd  + \
                                           ' --task_index=' + str(b)  + \
-                                          ' > ' + remote_log_file_address + '/' + str(model) + '_' + str(i) + '_' + str(variable) + '.txt\' &'
+                                          ' > ' + remote_log_file_address + '/' + str(model) + '_' + str(i) + '_' + str(variable) + '.txt' + \
+                                          ' 2> /dev/null' + '\' &'
                         
-                        cmd_list[len(ps)+len(worker)-1] = 'ssh ' + worker[-1] + ' \'' + ' timeout 300 ' + virtualenv + \
+                        cmd_list[len(ps)+len(worker)-1] = 'ssh ' + worker[-1] + ' \'' + ' timeout 60 ' + virtualenv + \
                                           'python ' + str(file_address) + \
                                           ' --model='+ str(model) + \
                                           ' --batch_size=' + str(i) + \
+                                          ' --num_batches=' + str(num_batches) + \
                                           ' --num_gpus=' + str(gpu_number) + \
                                           ' --variable_update=' + str(variable) + \
                                           ' --job_name=worker' + \
@@ -140,7 +152,8 @@ for variable in variable_update:
                                           ' --ps_hosts=' + ps_cmd + \
                                           ' --worker_hosts=' + worker_cmd  + \
                                           ' --task_index=' + str(len(worker) -1)  + \
-                                          ' > ' + remote_log_file_address + '/' + str(model) + '_' + str(i) + '_' + str(variable) + '.txt\''
+                                          ' > ' + remote_log_file_address + '/' + str(model) + '_' + str(i) + '_' + str(variable) + '.txt' + \
+                                          ' 2> /dev/null' +  '\' '
                         
                         # for to execute command
                         for cmd in cmd_list :
@@ -171,7 +184,7 @@ os.system(mv_cmd)
 
 for variable in variable_update:
 	for model in models: 
-    		for i in doubling_range(1, (max_batch_size + 1)):
+    		for i in doubling_range(min_batch_size, (max_batch_size + 1)):
                         log_path = local_log_address + '/' + str(model) + '_' + str(i) + '_' + str(variable) + '.txt'
                         print log_path
                         if os.path.exists(log_path):
