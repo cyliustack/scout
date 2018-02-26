@@ -17,7 +17,8 @@ from scout_print import *
 
 if __name__ == "__main__":
  
-    logdir='./scoutlog'
+    logdir = './scoutlog'
+    scout_home = os.getcwd()  
     benchmark = []
     program = []
     program_args = [] 
@@ -58,6 +59,9 @@ if __name__ == "__main__":
     if metric == "sofa_standard":
        sofa_profile = ['sofa','stat'] 
 
+
+    print_info("SCOUT_HOME = %s" % scout_home )
+
     if benchmark == 't-bench':
         print('Execute %s'%benchmark)
         subprocess.call(['mkdir', '-p', logdir])
@@ -70,12 +74,12 @@ if __name__ == "__main__":
             
             os.chdir(sys.path[0])
     if benchmark == 'dt-bench':
-        print('Execute %s'%benchmark)
+        print_info('Execute %s'%benchmark)
 	if program.find(':') != -1:
 		sync = program.split(':')[0] 
 		dnn_model = program.split(':')[1]
-		print('sync=%s, model=%s' % (sync, dnn_model) )
-    		subprocess.call(['pssh', '-h', 'hostfile.txt', 'python', '~/scout/dt-bench/dist-dnn.py', sync, dnn_model])
+		print_info('sync=%s, model=%s' % (sync, dnn_model) )
+    		subprocess.call(['python', '%s/dt-bench/dt-bench.py'%scout_home, sync, dnn_model])
 	else:
 		print_error('format of <PROGRAM> should be like "ps:alexnet"')
     else:
