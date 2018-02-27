@@ -61,7 +61,14 @@ if __name__ == "__main__":
 
     print_info("SCOUT_HOME = %s" % scout_home )
 
-    if benchmark == 't-bench':
+    if benchmark == 'f-bench':
+        print('Execute %s'%benchmark)
+        subprocess.call(['mkdir', '-p', logdir])
+        if program_args != None:
+            os.chdir('f-bench')
+            if program == "seq2seq":
+		print("Try to run seq2seq (RNN)")
+    elif benchmark == 't-bench':
         print('Execute %s'%benchmark)
         subprocess.call(['mkdir', '-p', logdir])
         if program_args != None:
@@ -72,7 +79,7 @@ if __name__ == "__main__":
                 subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=10','--all_reduce_spec=nccl'])
             
             os.chdir(sys.path[0])
-    if benchmark == 'dt-bench':
+    elif benchmark == 'dt-bench':
         print_info('Execute %s'%benchmark)
 	if program.find(':') != -1:
 		sync = program.split(':')[0] 

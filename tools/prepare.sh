@@ -2,6 +2,7 @@
 # Install Required Python Packages
 sudo pip install numpy scipy scikit-learn six pylint xlsxwriter pssh
 sudo pip install h5py 
+sudo pip install keras 
 #sudo pip install librosa  
 # Install OpenCV: reference link -> https://docs.opencv.org/2.4/doc/tutorials/introduction/linux_install/linux_install.html
 #sudo apt-get install build-essential
@@ -17,7 +18,7 @@ sudo pip install h5py
 
 
 # Reqirements for using j-bench
-wget "https://drive.google.com/uc?id=0Byvt-AfX75o1STUxZTFpMU10djA&export=download"
+#wget "https://drive.google.com/uc?id=0Byvt-AfX75o1STUxZTFpMU10djA&export=download"
 
 git submodule init
 git submodule update

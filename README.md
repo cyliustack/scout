@@ -5,7 +5,7 @@ This benchmark suite will include t-bench, j-bench, and f-bench.
 * j-bench is modified CNN multiple models benchmark (https://github.com/jcjohnson/cnn-benchmarks)
 * f-bench is modified Fathom benchmark (https://github.com/rdadolf/fathom)  
 
-Authors: James Liu (cyliustack@gmail.com),  Ryan Wei (sjeemb@gmail.com)   
+Authors: James Liu (cyliustack@gmail.com), Kevin Lyu (iamorangez@gmail.com), Ryan Wei (sjeemb@gmail.com)
 # Prerequisite
 If you want to use profiling tool SOFA, please download it from https://github.com/cyliustack/sofa.git   
 
@@ -19,7 +19,7 @@ If you want to use profiling tool SOFA, please download it from https://github.c
 ./scout t-bench resnet50
 ./scout t-bench resnet50 --metric=sofa_standard
 ./scout j-bench alexnet
-./scout f-bench seq2seq
+./scout f-bench autoenc
 ./scout dt-bench ps:alexnet  
 ```
 
