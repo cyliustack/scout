@@ -11,11 +11,7 @@ If you want to use profiling tool SOFA, please download it from https://github.c
 
 # Install
 ```
-git submodule init
-git submodule update
-pushd t-bench
-git pull origin master
-popd
+./tools/prepare.sh
 ```  
 
 # Usage: Basic Benchmarking 

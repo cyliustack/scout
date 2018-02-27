@@ -15,14 +15,17 @@ num_batches = 10
 # you can modify variable_update to ['parameter_server', 'distributed_replicated']
 # variable_update = ['parameter_server', 'distributed_replicated']
 variable_update = ['distributed_replicated']
-min_batch_size = 16 
-max_batch_size = 16
-
+min_batch_size = 32 
+max_batch_size = 32
+gpu_memory_frac_for_testing = 0.45
 ps = ['node0','node1']
 worker = ['node0','node1']
+#ps = ['node0']
+#worker = ['node0']
+
 
 # Device to use  as parameter server: cpu or gpu
-local_parameter_device = 'gpu'
+local_parameter_device = 'cpu'
 
 # end of address do not include '/'
 remote_log_file_address = '~/dt-bench-log-r'
@@ -67,8 +70,11 @@ for b in batch_num_array :
 	tmp += 1
 
 # ps and worker port
-ps_rand = random.randrange(10000, 30000)
-worker_rand = random.randrange(1000, 5000)
+# 451952-58000 reserved for private, dynamic and temporary usages
+ps_rand = random.randrange(49152, 58000)
+worker_rand = random.randrange(58000, 65536)
+#ps_rand = 50000
+#worker_rand = 50001
 ps_p = [None] * len(ps)
 worker_p= [None] * len(worker)
 
@@ -90,11 +96,8 @@ for c in range(len(worker)):
 	os.system(cmd_mkdir[c])
 
 # trans log file to localhost
-cmd_trans = 'scp -r ' + worker[0] + ':' + remote_log_file_address + ' .'  
-
-# move and rename folder
-move = 'mv ' + os.path.basename(remote_log_file_address) + ' '  + os.path.dirname(local_log_address)
-mv_cmd = 'mv -T ' + str(os.path.basename(remote_log_file_address)) + ' ' + str(os.path.basename(local_log_address))
+download_remote_logs_cmd = 'scp -r ' + worker[0] + ':' + remote_log_file_address + ' .'  
+relocate_remote_logs_cmd = 'cp -rT ' + os.path.basename(remote_log_file_address) + ' ' + local_log_address
 
 # split aaa@1.1.1.1 to 1.1.1.1:80 , and combine worker and ps cmd
 for i in range(len(ps)):
@@ -122,10 +125,11 @@ for variable in variable_update:
 					  ' --local_parameter_device=' + local_parameter_device + \
                                           ' --ps_hosts=' + ps_cmd  + \
                                           ' --worker_hosts=' + worker_cmd + \
+                                          ' --gpu_memory_frac_for_testing=' +str(gpu_memory_frac_for_testing) + \
                                           ' --task_index=' + str(a) + \
-					  ' 2> /dev/null' + '\' &'
+                                          '\' &'
                         for b in range(len(worker) -1):
-	                    cmd_list[len(ps)+b] ='ssh ' + worker[b] + ' \'' + virtualenv + \
+	                        cmd_list[len(ps)+b] ='ssh ' + worker[b] + ' \'' + virtualenv + \
                                           'python ' + str(file_address) + \
                                           ' --model='+ str(model) + \
                                           ' --batch_size=' + str(i) + \
@@ -136,11 +140,12 @@ for variable in variable_update:
 					  ' --local_parameter_device=' + local_parameter_device + \
                                           ' --ps_hosts=' + ps_cmd + \
                                           ' --worker_hosts=' + worker_cmd  + \
+                                          ' --gpu_memory_frac_for_testing=' + str(gpu_memory_frac_for_testing) + \
                                           ' --task_index=' + str(b)  + \
                                           ' > ' + remote_log_file_address + '/' + str(model) + '_' + str(i) + '_' + str(variable) + '.txt' + \
-                                          ' 2> /dev/null' + '\' &'
+                                          '\' &'
                         
-                        cmd_list[len(ps)+len(worker)-1] = 'ssh ' + worker[-1] + ' \'' + ' timeout 60 ' + virtualenv + \
+                        cmd_list[len(ps)+len(worker)-1] = 'ssh ' + worker[-1] + ' \'' + ' timeout 120 ' + virtualenv + \
                                           'python ' + str(file_address) + \
                                           ' --model='+ str(model) + \
                                           ' --batch_size=' + str(i) + \
@@ -152,8 +157,9 @@ for variable in variable_update:
                                           ' --ps_hosts=' + ps_cmd + \
                                           ' --worker_hosts=' + worker_cmd  + \
                                           ' --task_index=' + str(len(worker) -1)  + \
+                                          ' --gpu_memory_frac_for_testing=' + str(gpu_memory_frac_for_testing) + \
                                           ' > ' + remote_log_file_address + '/' + str(model) + '_' + str(i) + '_' + str(variable) + '.txt' + \
-                                          ' 2> /dev/null' +  '\' '
+                                          '\' '
                         
                         # for to execute command
                         for cmd in cmd_list :
@@ -172,15 +178,12 @@ for variable in variable_update:
                         time.sleep(20)
                         # receive log file
 
-# trans worker1's log file
-print cmd_trans
-os.system(cmd_trans)
+print download_remote_logs_cmd 
+os.system(download_remote_logs_cmd)
 os.remove('./kill.sh')
 
-print move
-os.system(move)
-print mv_cmd
-os.system(mv_cmd)
+print relocate_remote_logs_cmd
+os.system(relocate_remote_logs_cmd)
 
 for variable in variable_update:
 	for model in models: 
