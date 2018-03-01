@@ -3,13 +3,14 @@ ps_port=$(shuf -i 50000-65535 -n 1)
 wk_port=$(shuf -i 58000-65535 -n 1)
 ps_servers=""
 wk_servers=""
-base_node=0
-num_nodes=2
-for (( i=$base_node ; i < $num_nodes ; i++ ))
+first_node=1
+last_node=1
+num_nodes=`expr $last_node - $first_node + 1`
+for (( i=$first_node ; i <= $last_node ; i++ ))
 do
-	if [[ $i == $base_node ]]; then
-		ps_servers=node$base_node:$ps_port
-		wk_servers=node$base_node:$wk_port
+	if [[ $i == $first_node ]]; then
+		ps_servers=node$first_node:$ps_port
+		wk_servers=node$first_node:$wk_port
 	else
 		ps_servers=$ps_servers,node$i:$ps_port
 		wk_servers=$wk_servers,node$i:$wk_port
@@ -19,11 +20,11 @@ done
 echo "PS SERVERS: "$ps_servers
 echo "WK_SERVERS: "$wk_servers
 
-for (( i=$base_node; i<$num_nodes; i++ ))
+for (( i=0; i<$num_nodes; i++ ))
 do 
-	echo "Lauch Node $i"
-	ssh node$i \
-	cd $HOME/tensorflow-models/research/inception &&  \
+	echo "Lauch Node $( expr $i + $first_node )"
+	#ssh node$i \
+	#cd $HOME/tensorflow-models/research/inception &&  \
 	bazel-bin/inception/imagenet_distributed_train \
 	--batch_size=16 \
 	--data_dir=$HOME/ImageNetData/ImageNet_TFRecord \
@@ -33,8 +34,8 @@ do
 	--ps_hosts=$ps_servers \
 	--worker_hosts=$wk_servers &
 	
-	ssh node$i \
-	cd $HOME/tensorflow-models/research/inception &&  \
+	#ssh node$i \
+	#cd $HOME/tensorflow-models/research/inception &&  \
 	bazel-bin/inception/imagenet_distributed_train \
 	--batch_size=16 \
 	--data_dir=$HOME/ImageNetData/ImageNet_TFRecord \
