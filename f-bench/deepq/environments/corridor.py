@@ -128,7 +128,7 @@ register(
     'map_name': '4x4',
     'n_actions': 5
   },
-  timestep_limit=100,
+  #timestep_limit=100,
 )
 
 register(
@@ -138,7 +138,7 @@ register(
     'map_name': '4x4',
     'n_actions': 10
   },
-  timestep_limit=100,
+  #timestep_limit=100,
 )
 
 register(
@@ -148,7 +148,7 @@ register(
     'map_name': '9x9',
     'n_actions': 5
   },
-  timestep_limit=100,
+  #timestep_limit=100,
 )
 
 register(
@@ -158,5 +158,5 @@ register(
     'map_name': '9x9',
     'n_actions': 10
   },
-  timestep_limit=100,
+  #timestep_limit=100,
 )
