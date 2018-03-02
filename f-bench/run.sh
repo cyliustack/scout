@@ -23,7 +23,7 @@ elif [[ "$model" == "memnet" ]]; then
 elif [[ "$model" == "deepq" ]]; then
 	${BASE_DIR}/tfenv/deepq/python deepq/main.py --env_name=Breakout-v0 --is_train=True
 elif [[ "$model" == "speech" ]]; then
-    ${BASE_DIR}/tfenv/speech/python python -u DeepSpeech.py 
+    ${BASE_DIR}/tfenv/speech/python -u DeepSpeech.py 
 						--train_files data/ldc93s1/ldc93s1.csv \
 						--dev_files data/ldc93s1/ldc93s1.csv \
 						--test_files data/ldc93s1/ldc93s1.csv \
