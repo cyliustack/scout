@@ -20,6 +20,8 @@ done
 echo "PS SERVERS: "$ps_servers
 echo "WK_SERVERS: "$wk_servers
 
+batch_size=32
+
 for (( i=0; i<$num_nodes; i++ ))
 do 
 	nid=$( expr $i + $first_node )
@@ -29,7 +31,7 @@ do
 	ssh node$nid \
 	"cd tensorflow-models/research/inception &&  \
 	bazel-bin/inception/imagenet_distributed_train \
-	--batch_size=32 \
+	--batch_size=${batch_size} \
 	--data_dir=$HOME/ImageNetData/ImageNet_TFRecord \
 	--job_name='worker' \
 	--task_id=$i \
@@ -41,7 +43,7 @@ do
 	ssh node$nid \
 	"cd tensorflow-models/research/inception &&  \
 	bazel-bin/inception/imagenet_distributed_train \
-	--batch_size=32 \
+	--batch_size=${batch_size} \
 	--data_dir=$HOME/ImageNetData/ImageNet_TFRecord \
 	--job_name='ps' \
 	--task_id=$i \
