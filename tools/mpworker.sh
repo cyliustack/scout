@@ -5,7 +5,7 @@ ps_servers=""
 wk_servers=""
 num_nodes=2
 num_workers_per_node=2
-gpu_memory_frac_for_testing=0.3 
+gpu_memory_frac_for_testing=0.0 
 for (( i=0 ; i < $num_nodes ; i++ ))
 do
 	if [[ $i == 0 ]]; then
@@ -28,7 +28,7 @@ done
 echo "PS SERVERS: "$ps_servers
 echo "WK_SERVERS: "$wk_servers
 max_steps=60
-batch_size=32
+batch_size=64
 models_dir=~/scout/t-bench/scripts/tf_cnn_benchmarks
 #models_dir=~/tensorflow-models/research/inception
 #models_dir=~/workspace/models/research/inception
@@ -46,9 +46,12 @@ do
 		echo "Lauch worker-${wid} on Node$i"
 		ssh node$nid \
 		"${with_env} && cd ${models_dir} &&  \
-		python tf_cnn_benchmarks.py \
+		CUDA_VISIBLE_DEVICES=$k python tf_cnn_benchmarks.py \
 		--model=${model} \
 		--batch_size=${batch_size} \
+		--variable_update=parameter_server \
+		--local_parameter_device=cpu \
+		--num_gpus=1 \
 		--data_name=imagenet \
 		--data_dir=$HOME/ImageNetData/ImageNet_TFRecord \
 		--job_name='worker' \
@@ -59,7 +62,7 @@ do
 		--server_protocol=grpc \
 		--num_batches=${max_steps} \
 		--worker_hosts=${wk_servers} \
-		2> /dev/null" &
+		" &
 	done
 
 	echo "Lauch PS on Node"$nid
@@ -67,9 +70,12 @@ do
 	ssh node$nid rm -r /tmp/imagenet_train
 	ssh node$nid \
 	"${with_env} && cd ${models_dir} && \
-	python tf_cnn_benchmarks.py \
+ 	python tf_cnn_benchmarks.py \
 	--model=${model} \
 	--batch_size=${batch_size} \
+	--local_parameter_device=cpu \
+	--variable_update=parameter_server \
+	--num_gpus=1 \
 	--data_name=imagenet \
 	--data_dir=$HOME/ImageNetData/ImageNet_TFRecord \
 	--job_name='ps' \
@@ -80,7 +86,7 @@ do
 	--server_protocol=grpc \
 	--num_batches=${max_steps} \
 	--worker_hosts=${wk_servers} \
-	2> /dev/null" &
+	" &
 done
 
 
