@@ -1,1 +1,1 @@
-nvidia-smi | awk '$4=="C" {print $3}' | xargs kill -9 ; nvidia-smi
+ps aux | grep tf_cnn | awk {'print $2'} | xargs kill -9
