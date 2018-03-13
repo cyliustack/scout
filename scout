@@ -17,8 +17,8 @@ from scout_print import *
 if __name__ == "__main__":
  
     logdir = './scoutlog'
-    data_dir = '/home/ubuntu/ImageNetData/ImageNet_TFRecord'
-    #data_dir = '/tmp/ImageNetData/ImageNet_TFRecord'
+    data_dir = '/tmp/ramdisk/dataset/ImageNetData/ImageNet_TFRecord/'
+    #data_dir = '/tmp/ssd/dataset/ImageNetData/ImageNet_TFRecord/'
     scout_home = os.getcwd()  
     benchmark = []
     program = []
