@@ -23,10 +23,10 @@ worker = ['node0','node1']
 #ps = ['node0']
 #worker = ['node0']
 
-
 # Device to use  as parameter server: cpu or gpu
 local_parameter_device = 'cpu'
-
+server_protocol='grpc'
+#server_protocol='grpc+verbs'
 # end of address do not include '/'
 remote_log_file_address = '~/dt-bench-log-r'
 local_log_address = '~/dt-bench-log-l'
@@ -34,7 +34,16 @@ file_address = '~/scout/t-bench/scripts/tf_cnn_benchmarks/tf_cnn_benchmarks.py'
 
 # if you don't need to use virtualenv, modify to ''
 # virtualenv example = '/home/hong/virtialenv_dir/bin/' 
-virtualenv = ''
+virtualenv = 'source ~/setenv.sh ; source ~/tf-nightly/bin/activate ; '
+
+profile_begin = ''
+profile_end = ''
+#profile_begin = 'source ~/apps/sofa/tools/activate.sh && sofa record \"'
+#profile_end = '\"'
+ps_profile_begin = ''
+ps_profile_end = ''
+#ps_profile_begin = 'source ~/apps/sofa/tools/activate && sofa record \"'
+#ps_profile_end = '\"'
 
 # -----------------------------------------------------------------------------------
 
@@ -114,7 +123,10 @@ for variable in variable_update:
 	for model in models: 
     		for i in doubling_range(min_batch_size, (max_batch_size + 1)):
                         for a in range(len(ps)):
-                            cmd_list[a] = 'ssh ' + ps[a] + ' \'' + virtualenv + \
+			    if a > 0:
+				ps_profile_begin=''
+				ps_profile_end=''
+                            cmd_list[a] = 'ssh ' + ps[a] + ' \'' + virtualenv + ps_profile_begin + \
                                           'python ' + str(file_address) + \
                                           ' --model='+ str(model) + \
                                           ' --batch_size=' + str(i) + \
@@ -123,13 +135,18 @@ for variable in variable_update:
                                           ' --variable_update=' + str(variable) + \
                                           ' --job_name=ps' + \
 					  ' --local_parameter_device=' + local_parameter_device + \
-                                          ' --ps_hosts=' + ps_cmd  + \
+                                          ' --server_protocol=' + server_protocol + \
+					  ' --ps_hosts=' + ps_cmd  + \
                                           ' --worker_hosts=' + worker_cmd + \
                                           ' --gpu_memory_frac_for_testing=' +str(gpu_memory_frac_for_testing) + \
                                           ' --task_index=' + str(a) + \
+					  ' ' + ps_profile_end + \
                                           '\' &'
                         for b in range(len(worker) -1):
-	                        cmd_list[len(ps)+b] ='ssh ' + worker[b] + ' \'' + virtualenv + \
+				if b > 0:
+					profile_being = ''
+					profile_end = ''
+	                        cmd_list[len(ps)+b] ='ssh ' + worker[b] + ' \'' + virtualenv + profile_begin + \
                                           'python ' + str(file_address) + \
                                           ' --model='+ str(model) + \
                                           ' --batch_size=' + str(i) + \
@@ -138,14 +155,16 @@ for variable in variable_update:
                                           ' --variable_update=' + str(variable) + \
                                           ' --job_name=worker' + \
 					  ' --local_parameter_device=' + local_parameter_device + \
+                                          ' --server_protocol=' + server_protocol + \
                                           ' --ps_hosts=' + ps_cmd + \
                                           ' --worker_hosts=' + worker_cmd  + \
                                           ' --gpu_memory_frac_for_testing=' + str(gpu_memory_frac_for_testing) + \
                                           ' --task_index=' + str(b)  + \
                                           ' > ' + remote_log_file_address + '/' + str(model) + '_' + str(i) + '_' + str(variable) + '.txt' + \
+					  ' ' + profile_end + \
                                           '\' &'
                         
-                        cmd_list[len(ps)+len(worker)-1] = 'ssh ' + worker[-1] + ' \'' + ' timeout 120 ' + virtualenv + \
+                        cmd_list[len(ps)+len(worker)-1] = 'ssh ' + worker[-1] + ' \'' + virtualenv + ' timeout 120 ' +  \
                                           'python ' + str(file_address) + \
                                           ' --model='+ str(model) + \
                                           ' --batch_size=' + str(i) + \
@@ -154,6 +173,7 @@ for variable in variable_update:
                                           ' --variable_update=' + str(variable) + \
                                           ' --job_name=worker' + \
 					  ' --local_parameter_device=' + local_parameter_device + \
+                                          ' --server_protocol=' + server_protocol + \
                                           ' --ps_hosts=' + ps_cmd + \
                                           ' --worker_hosts=' + worker_cmd  + \
                                           ' --task_index=' + str(len(worker) -1)  + \
