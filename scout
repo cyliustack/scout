@@ -18,6 +18,8 @@ if __name__ == "__main__":
  
     logdir = './scoutlog'
     data_dir = '/tmp/ramdisk/dataset/ImageNetData/ImageNet_TFRecord/'
+    all_reduce_spec = 'nccl'
+    num_gpus = 1
     #data_dir = '/tmp/ssd/dataset/ImageNetData/ImageNet_TFRecord/'
     scout_home = os.getcwd()  
     benchmark = []
@@ -42,15 +44,19 @@ if __name__ == "__main__":
     #    parser.add_argument('sofa-benchmark', nargs=1, metavar='[record|report|preprocess|analyze|visualize]')
     parser.add_argument('program', type=str, nargs=1, metavar='<PROGRAM>')
     #parser.add_argument('program_args', type=str, nargs='*', metavar='program_args')
-   
+    parser.add_argument('--all_reduce_spec', type=str, required=False, metavar='SPEC',
+                help='all_reduce approach: e.g. nccl, xring')
+  
     args = parser.parse_args()
     logdir=os.getcwd()+'/scoutlog'
     if args.logdir != None:
         logdir = args.logdir
+
     if args.num_gpus != None:
         num_gpus = args.num_gpus
-    else:
-        num_gpus = 8
+ 
+    if args.all_reduce_spec != None:
+        all_reduce_spec = args.all_reduce_spec 
     
     benchmark = args.benchmark[0]
     program = args.program[0]
@@ -77,24 +83,25 @@ if __name__ == "__main__":
         subprocess.call(['mkdir', '-p', logdir])
         if program_args != None:
             os.chdir('t-bench/scripts/tf_cnn_benchmarks')
+            if program == "alexnet":
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=512', '--num_gpus=%d'%num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=10','--all_reduce_spec=%s'%all_reduce_spec])
             if program == "vgg16":
-                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=10','--all_reduce_spec=xring'])
-            if program == "resnet50":
-                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=10','--all_reduce_spec=nccl'])
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=10','--all_reduce_spec=%s'%all_reduce_spec])
+            if program == "inception3":
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=10','--all_reduce_spec=%s'%all_reduce_spec])
+	    if program == "resnet50":
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=10','--all_reduce_spec=%s'%all_reduce_spec])
             if program == "resnet50_real":
-                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=resnet50', '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=1000000','--all_reduce_spec=nccl','--train_dir=/tmp/mytrain','--data_name=imagenet','--data_dir=%s'%data_dir])
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=resnet50', '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=1000000','--all_reduce_spec=%s'%all_reduce_spec,'--train_dir=/tmp/mytrain','--data_name=imagenet','--data_dir=%s'%data_dir])
             os.chdir(sys.path[0])
     elif benchmark == 'dt-bench':
         print_info('Execute %s'%benchmark)
 	if program.find(':') != -1:
-		sync = program.split(':')[0] 
-		dnn_model = program.split(':')[1]
-		print_info('sync=%s, model=%s' % (sync, dnn_model) )
-    		subprocess.call(['python', '%s/dt-bench/dt-bench.py'%scout_home, sync, dnn_model])
+		variable_update = program.split(':')[0] 
+		model = program.split(':')[1]
+		print_info('varible_update=%s, model=%s' % (variable_update, model) )
+    		subprocess.call(['python', '%s/dt-bench/dt-bench.py'%scout_home, '--variable_update=%s'%variable_update, '--model=%s'%model,'--num_gpus=%d'%num_gpus, '--all_reduce_spec=%s'%all_reduce_spec ])
 	else:
 		print_error('format of <PROGRAM> should be like "ps:alexnet"')
     else:
         print('no benchmark is specified')
-
-
-
