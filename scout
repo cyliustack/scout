@@ -92,7 +92,10 @@ if __name__ == "__main__":
 	    if program == "resnet50":
                 subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=10','--all_reduce_spec=%s'%all_reduce_spec])
             if program == "resnet50_real":
-                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=resnet50', '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=1000000','--all_reduce_spec=%s'%all_reduce_spec,'--train_dir=/tmp/mytrain','--data_name=imagenet','--data_dir=%s'%data_dir])
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program.split('_')[0], '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=100','--all_reduce_spec=%s'%all_reduce_spec,'--train_dir=/tmp/mytrain','--data_name=imagenet','--data_dir=%s'%data_dir])
+	    if program == "trivial_real":
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program.split('_')[0],'--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=1000','--all_reduce_spec=%s'%all_reduce_spec,'--data_name=imagenet','--data_dir=%s'%data_dir])
+
             os.chdir(sys.path[0])
     elif benchmark == 'dt-bench':
         print_info('Execute %s'%benchmark)
