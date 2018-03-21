@@ -17,10 +17,12 @@ from scout_print import *
 if __name__ == "__main__":
  
     logdir = './scoutlog'
-    data_dir = '/tmp/ramdisk/dataset/ImageNetData/ImageNet_TFRecord/'
+    data_dir =  '/mnt/dataset/imagenet'
+    #data_dir = '/tmp/ramdisk/dataset/ImageNetData/ImageNet_TFRecord/'
+    #data_dir = '/tmp/ssd/dataset/ImageNetData/ImageNet_TFRecord/'
     all_reduce_spec = 'nccl'
     num_gpus = 1
-    #data_dir = '/tmp/ssd/dataset/ImageNetData/ImageNet_TFRecord/'
+    num_batches = 10
     scout_home = os.getcwd()  
     benchmark = []
     program = []
@@ -37,8 +39,10 @@ if __name__ == "__main__":
                     help='path to the directory of configuration file')
     parser.add_argument('--metric', type=str, required=False, metavar='metric',
                     help='performance metric, like hotspot, memory pressure')
-    parser.add_argument('--num_gpus', type=int, required=False, metavar='n_GPUs',
+    parser.add_argument('--num_gpus', type=int, required=False, metavar='N',
                     help='number of GPUs')
+    parser.add_argument('--num_batches', type=int, required=False, metavar='N',
+                    help='number of batches (a.k.a. steps or iterations')
     parser.add_argument('benchmark', type=str, nargs=1, metavar='<BENCHMARK_SUITE>',
             help='specify a benchmark to run: e.g. f-bench, j-bench, t-bench')
     #    parser.add_argument('sofa-benchmark', nargs=1, metavar='[record|report|preprocess|analyze|visualize]')
@@ -54,6 +58,9 @@ if __name__ == "__main__":
 
     if args.num_gpus != None:
         num_gpus = args.num_gpus
+ 
+    if args.num_batches != None:
+        num_batches = args.num_batches
  
     if args.all_reduce_spec != None:
         all_reduce_spec = args.all_reduce_spec 
@@ -84,17 +91,18 @@ if __name__ == "__main__":
         if program_args != None:
             os.chdir('t-bench/scripts/tf_cnn_benchmarks')
             if program == "alexnet":
-                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=512', '--num_gpus=%d'%num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=10','--all_reduce_spec=%s'%all_reduce_spec])
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=512', '--num_gpus=%d'%num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=%s'%num_batches,'--all_reduce_spec=%s'%all_reduce_spec])
             if program == "vgg16":
-                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=10','--all_reduce_spec=%s'%all_reduce_spec])
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=%s'%num_batches,'--all_reduce_spec=%s'%all_reduce_spec])
             if program == "inception3":
-                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=10','--all_reduce_spec=%s'%all_reduce_spec])
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=%s'%num_batches,'--all_reduce_spec=%s'%all_reduce_spec])
 	    if program == "resnet50":
-                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=10','--all_reduce_spec=%s'%all_reduce_spec])
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program, '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=%s'%num_batches,'--all_reduce_spec=%s'%all_reduce_spec])
             if program == "resnet50_real":
-                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program.split('_')[0], '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=100','--all_reduce_spec=%s'%all_reduce_spec,'--train_dir=/tmp/mytrain','--data_name=imagenet','--data_dir=%s'%data_dir])
+                subprocess.call(sofa_profile+['rm','-r','/tmp/mytrain'])
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program.split('_')[0], '--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=%s'%num_batches,'--all_reduce_spec=%s'%all_reduce_spec,'--train_dir=/tmp/mytrain','--data_name=imagenet','--data_dir=%s'%data_dir])
 	    if program == "trivial_real":
-                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program.split('_')[0],'--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=1000','--all_reduce_spec=%s'%all_reduce_spec,'--data_name=imagenet','--data_dir=%s'%data_dir])
+                subprocess.call(sofa_profile+['python','tf_cnn_benchmarks.py','--model=%s'%program.split('_')[0],'--batch_size=64', '--num_gpus=%d'%num_gpus, '--local_parameter_device=cpu', '--num_batches=%s'%num_batches,'--all_reduce_spec=%s'%all_reduce_spec,'--data_name=imagenet','--data_dir=%s'%data_dir])
 
             os.chdir(sys.path[0])
     elif benchmark == 'dt-bench':
