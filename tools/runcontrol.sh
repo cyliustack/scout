@@ -14,6 +14,6 @@ python ~/scout/t-bench/scripts/tf_cnn_benchmarks/tf_cnn_benchmarks.py \
     --job_name=$job  \
     --worker_hosts=node0:50001,node1:50001 \
     --controller_host=controller0:50002 \
-    --all_reduce_spec="pscpu" \
+    --all_reduce_spec="pscpu:2k:pscpu#2:64k:xring" \
     --gpu_memory_frac_for_testing=0 \
     $task_index_cmd 
