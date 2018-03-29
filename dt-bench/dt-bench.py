@@ -11,7 +11,7 @@ if __name__ == "__main__":
     sync_methods = None
     dnn_models = None
     gpu_number = 1
-    all_reduce_spec = 'nccl/xring'
+    all_reduce_spec = 'xring'
     # if server_protocol='grpc+verbs', RDMA_DEVICE must be specified(e.g.
     # RDMA_DEVICE=mlx5_3).
     server_protocol = 'grpc'
@@ -49,14 +49,14 @@ if __name__ == "__main__":
         data_dir = args.data_dir
     print(variable_update)
     print(models)
-    num_batches = 100
+    num_batches = 20
 
     min_batch_size = 32
     max_batch_size = 64
     gpu_memory_frac_for_testing = 0.45
-    ps = ['node0']
-    worker = ['node0']
-
+    ps = ['node0','node1']
+    worker = ['node0','node1']
+    controller_host = 'node0'
     # Device to use  as parameter server: cpu or gpu
     local_parameter_device = 'cpu'
     # end of address do not include '/'
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     worker_p = [None] * len(worker)
 
     # cmd setting
-    cmd_list = [None] * (len(ps) + len(worker))
+    cmd_list = [None] * (len(ps) + len(worker) )
     cmd_kill = [None] * len(ps)
     cmd_mkdir = [None] * len(worker)
 
@@ -172,21 +172,27 @@ if __name__ == "__main__":
                                   ' --num_gpus=' + str(gpu_number) + \
                                   ' --variable_update=' + str(variable) + \
                                   ' --job_name=ps' + \
-                                  ' --controller_host=node0' + \
                                   ' --local_parameter_device=' + local_parameter_device + \
                                   ' --server_protocol=' + server_protocol + \
                                   ' --all_reduce_spec=' + all_reduce_spec + \
-                                  ' --ps_hosts=' + ps_cmd  + \
+                                  ' --controller_host=' + controller_host  + \
+                                  ' --ps_hosts=' + ps_cmd + \
                                   ' --worker_hosts=' + worker_cmd + \
                                   ' --gpu_memory_frac_for_testing=' + str(gpu_memory_frac_for_testing) + \
                                   ' --task_index=' + str(a) + \
                                   ' ' + ps_profile_end + \
                                   '\' &'
-                for b in range(len(worker) - 1):
+                for b in range(len(worker)):
+                    if b == len(worker)-1:
+                        timeout_cmd = ' timeout 120 '
+                        hold_on = ''
+                    else:
+                        timeout_cmd = ''
+                        hold_on = ' & '
                     if b > 0:
                         profile_being = ''
                         profile_end = ''
-                    cmd_list[len(ps) + b] = 'ssh ' + worker[b] + ' \'' + virtualenv + \
+                    cmd_list[len(ps) + b] = 'ssh ' + worker[b] + ' \'' + virtualenv + timeout_cmd  + \
                         'python ' + str(file_address) + \
                         ' --model=' + str(model) + \
                         ' --data_name=imagenet' + \
@@ -196,39 +202,16 @@ if __name__ == "__main__":
                         ' --num_gpus=' + str(gpu_number) + \
                         ' --variable_update=' + str(variable) + \
                         ' --job_name=worker' + \
-                        ' --controller_host=node0' + \
                         ' --local_parameter_device=' + local_parameter_device + \
                         ' --server_protocol=' + server_protocol + \
                         ' --all_reduce_spec=' + all_reduce_spec + \
+                        ' --controller_host=' + controller_host  + \
                         ' --ps_hosts=' + ps_cmd + \
                         ' --worker_hosts=' + worker_cmd  + \
                         ' --gpu_memory_frac_for_testing=' + str(gpu_memory_frac_for_testing) + \
                         ' --task_index=' + str(b)  + \
                         ' > ' + remote_log_file_address + '/' + str(model) + '_' + str(i) + '_' + str(variable) + '.txt' + \
-                        '\' &'
-
-                cmd_list[len(ps) + len(worker) - 1] = 'ssh ' + worker[-1] + ' \'' + virtualenv + ' timeout 120 ' +  \
-                    profile_begin + \
-                    ' python ' + str(file_address) + \
-                    ' --model=' + str(model) + \
-                    ' --data_name=imagenet' + \
-                    ' --data_dir=' + data_dir + \
-                    ' --batch_size=' + str(i) + \
-                    ' --num_batches=' + str(num_batches) + \
-                    ' --num_gpus=' + str(gpu_number) + \
-                    ' --variable_update=' + str(variable) + \
-                    ' --job_name=worker' + \
-                    ' --controller_host=node0' + \
-                    ' --local_parameter_device=' + local_parameter_device + \
-                    ' --server_protocol=' + server_protocol + \
-                    ' --all_reduce_spec=' + all_reduce_spec + \
-                    ' --ps_hosts=' + ps_cmd + \
-                    ' --worker_hosts=' + worker_cmd  + \
-                    ' --task_index=' + str(len(worker) - 1)  + \
-                    ' --gpu_memory_frac_for_testing=' + str(gpu_memory_frac_for_testing) + \
-                    ' > ' + remote_log_file_address + '/' + str(model) + '_' + str(i) + '_' + str(variable) + '.txt' + \
-                    ' ' + profile_end + \
-                    '\' '
+                        '\' ' + hold_on 
 
                 # for to execute command
                 for cmd in cmd_list:
