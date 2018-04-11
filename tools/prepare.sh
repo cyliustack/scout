@@ -22,4 +22,4 @@ sudo pip install keras
 
 git submodule init
 git submodule update
-cd t-bench && git pull origin master && cd -
+git submodule foreach git pull origin master
