@@ -17,14 +17,13 @@ from scout_print import *
 if __name__ == "__main__":
 
     logdir = './scoutlog'
-    #data_dir=''
-    data_dir = '/tmp/dataset/imagenet/'
+    data_dir=''
+    #data_dir = '/tmp/dataset/imagenet/'
     # data_dir = '/tmp/ramdisk/dataset/ImageNetData/ImageNet_TFRecord/'
     # data_dir = '/tmp/ssd/dataset/ImageNetData/ImageNet_TFRecord/'
     num_gpus = 1
     num_batches = 10
-    batch_size = 64
-    all_reduce_spec = 'nccl'
+    batch_size = 32
     server_protocol = 'grpc'
     scout_home = os.getcwd()
     benchmark = []
@@ -73,15 +72,22 @@ if __name__ == "__main__":
     if args.num_batches is not None:
         num_batches = args.num_batches
 
-    if args.all_reduce_spec is not None:
-        all_reduce_spec = args.all_reduce_spec
-
+   
     if args.server_protocol is not None:
         server_protocol = args.server_protocol
 
     benchmark = args.benchmark[0]
     program = args.program[0]
     metric = args.metric
+
+    if args.all_reduce_spec is not None:       
+        all_reduce_spec = args.all_reduce_spec
+    else:
+        if benchmark == 'dt-bench':
+            all_reduce_spec = 'pscpu'
+        else:
+            all_reduce_spec = 'nccl' 
+ 
     # program_args = args.program_args
 
     print metric
@@ -127,7 +133,7 @@ if __name__ == "__main__":
                 subprocess.call(
                     sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
                                     program, '--batch_size=%d'%batch_size, '--num_gpus=%d' %
-                                    num_gpus, '--variable_update=parameter_server', '--local_parameter_device=cpu', '--num_batches=%s' %
+                                    num_gpus, '--variable_update=replicated', '--local_parameter_device=cpu', '--num_batches=%s' %
                                     num_batches, '--all_reduce_spec=%s' %
                                     all_reduce_spec])
             if program == "resnet50_real":

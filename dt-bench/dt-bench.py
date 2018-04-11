@@ -11,7 +11,7 @@ if __name__ == "__main__":
     sync_methods = None
     dnn_models = None
     gpu_number = 1
-    all_reduce_spec = 'xring'
+    all_reduce_spec = 'pscpu'
     # if server_protocol='grpc+verbs', RDMA_DEVICE must be specified(e.g.
     # RDMA_DEVICE=mlx5_3).
     server_protocol = 'grpc'
@@ -52,11 +52,25 @@ if __name__ == "__main__":
     num_batches = 20
 
     min_batch_size = 32
-    max_batch_size = 64
+    max_batch_size = 32 
     gpu_memory_frac_for_testing = 0.45
     ps = ['node0','node1']
-    worker = ['node0','node1']
-    controller_host = 'node0'
+    workers = ['node0','node1']
+    controllers = ['controller0']
+
+    if variable_update[0] == 'distributed_all_reduce':
+        print("Distributed_all_reduce will ignore ps-related settings.")
+        ps = []
+    else:
+        print("Distributed_all_reduce will ignore controller settings.")
+        controllers = []
+    
+ 
+    members = []
+    members.extend(ps)
+    members.extend(workers)
+    members.extend(controllers)   
+    
     # Device to use  as parameter server: cpu or gpu
     local_parameter_device = 'cpu'
     # end of address do not include '/'
@@ -114,16 +128,18 @@ if __name__ == "__main__":
     # ps and worker port
     # 451952-58000 reserved for private, dynamic and temporary usages
     ps_rand = random.randrange(49152, 58000)
-    worker_rand = random.randrange(58000, 65536)
+    worker_rand = random.randrange(58000, 65036)
+    controller_rand = random.randrange(65036, 65536)
     # ps_rand = 50000
     # worker_rand = 50001
     ps_p = [None] * len(ps)
-    worker_p = [None] * len(worker)
+    worker_p = [None] * len(workers)
+    controller_p = [None] * len(controllers)
 
     # cmd setting
-    cmd_list = [None] * (len(ps) + len(worker) )
-    cmd_kill = [None] * len(ps)
-    cmd_mkdir = [None] * len(worker)
+    cmd_list = [None] * (len(ps) + len(workers) + len(controllers) )
+    cmd_kill = [None] * len(members)
+    cmd_mkdir = [None] * len(workers)
 
     # create a script to kill program
     with open('kill.sh', 'w+') as fout:
@@ -134,70 +150,97 @@ if __name__ == "__main__":
 
     # create remote log dir
     mkdir_cmd = 'mkdir -p ' + remote_log_file_address
-    for c in range(len(worker)):
-        cmd_mkdir[c] = 'ssh ' + worker[c] + ' \'' + mkdir_cmd + '\''
+    for c in range(len(workers)):
+        cmd_mkdir[c] = 'ssh ' + workers[c] + ' \'' + mkdir_cmd + '\''
         os.system(cmd_mkdir[c])
 
     # trans log file to localhost
     download_remote_logs_cmd = 'scp -r ' + \
-        worker[0] + ':' + remote_log_file_address + ' .'
+        workers[0] + ':' + remote_log_file_address + ' .'
     relocate_remote_logs_cmd = 'cp -rT ' + \
         os.path.basename(remote_log_file_address) + ' ' + local_log_address
 
     # split aaa@1.1.1.1 to 1.1.1.1:80 , and combine worker and ps cmd
-    for i in range(len(ps)):
-    #    ps_p[i] = ps[i].split('@')[1] + ':' + str(ps_rand)
-        ps_p[i] = ps[i] + ':' + str(ps_rand)
-    ps_cmd = ','.join(ps_p)
+    if len(ps) > 0:
+        for i in range(len(ps)):
+        #    ps_p[i] = ps[i].split('@')[1] + ':' + str(ps_rand)
+            ps_p[i] = ps[i] + ':' + str(ps_rand)
+        ps_cmd = ','.join(ps_p)
+    else:
+        ps_cmd=''
 
-    for i in range(len(worker)):
-    #    worker_p[i] = worker[i].split('@')[1] + ':' + str(worker_rand)
-        worker_p[i] = worker[i] + ':' + str(worker_rand)
-    worker_cmd = ','.join(worker_p)
+    if len(workers) > 0:
+        for i in range(len(workers)):
+        #    worker_p[i] = worker[i].split('@')[1] + ':' + str(worker_rand)
+            worker_p[i] = workers[i] + ':' + str(worker_rand)
+        worker_cmd = ','.join(worker_p)
+
+    if len(controllers) >0:
+        for i in range(len(controllers)):
+        #    worker_p[i] = worker[i].split('@')[1] + ':' + str(worker_rand)
+            controller_p[i] = controllers[i] + ':' + str(controller_rand)
+        controller_cmd = ','.join(controller_p)
+
+    if len(ps) > 0:
+        ps_hosts_cmd = ' --ps_hosts=%s '%ps_cmd
+    else:
+        ps_hosts_cmd = ''
+    
+    if len(controllers) > 0:
+        controller_hosts_cmd = ' --controller_host=%s '% controller_cmd 
+    else:
+        controller_hosts_cmd = ' '
+    
 
     for variable in variable_update:
         for model in models:
-            for i in doubling_range(min_batch_size, (max_batch_size + 1)):
-                for a in range(len(ps)):
-                    if a > 0:
+            for bs in doubling_range(min_batch_size, (max_batch_size + 1)):
+                log_cmd_default = ' > ' + remote_log_file_address + '/' + str(model) + '_' + str(bs) + '_' + str(variable) + '.txt'
+                if len(ps) > 0:
+                    for i in xrange(len(ps)):
+                        print("Launch ps-" + str(i) + ':')                        
                         ps_profile_begin = ''
                         ps_profile_end = ''
-                    cmd_list[a] = 'ssh ' + ps[a] + ' \'' + virtualenv + ps_profile_begin + \
+                        cmd_list[i] = 'ssh ' + ps[i] + ' \'' + virtualenv + ps_profile_begin + \
                                   'python ' + str(file_address) + \
                                   ' --model=' + str(model) + \
                                   ' --data_name=imagenet' + \
                                   ' --data_dir=' + data_dir + \
-                                  ' --batch_size=' + str(i) + \
+                                  ' --batch_size=' + str(bs) + \
                                   ' --num_batches=' + str(num_batches) + \
                                   ' --num_gpus=' + str(gpu_number) + \
                                   ' --variable_update=' + str(variable) + \
-                                  ' --job_name=ps' + \
+                                  ' --job_name=ps' +  \
                                   ' --local_parameter_device=' + local_parameter_device + \
                                   ' --server_protocol=' + server_protocol + \
                                   ' --all_reduce_spec=' + all_reduce_spec + \
-                                  ' --controller_host=' + controller_host  + \
-                                  ' --ps_hosts=' + ps_cmd + \
+                                  controller_hosts_cmd + \
+                                  ps_hosts_cmd + \
                                   ' --worker_hosts=' + worker_cmd + \
                                   ' --gpu_memory_frac_for_testing=' + str(gpu_memory_frac_for_testing) + \
-                                  ' --task_index=' + str(a) + \
+                                  ' --task_index=' + str(i) + \
                                   ' ' + ps_profile_end + \
-                                  '\' &'
-                for b in range(len(worker)):
-                    if b == len(worker)-1:
-                        timeout_cmd = ' timeout 120 '
-                        hold_on = ''
-                    else:
-                        timeout_cmd = ''
-                        hold_on = ' & '
-                    if b > 0:
-                        profile_being = ''
+                                  ' \' & '
+                
+                if len(workers) > 0:
+                    for i in xrange(len(workers)):
+                        if i == len(workers)-1 and len(controllers) == 0 :
+                            timeout_cmd = ' timeout 300 '
+                            hold_on = ''
+                            log_cmd = log_cmd_default 
+                        else:
+                            timeout_cmd = ''
+                            hold_on = ' & '
+                            log_cmd = '' 
+                        print("Launch worker-" + str(i) + ':')                        
+                        profile_begin = ''
                         profile_end = ''
-                    cmd_list[len(ps) + b] = 'ssh ' + worker[b] + ' \'' + virtualenv + timeout_cmd  + \
+                        cmd_list[len(ps) + i] = 'ssh ' + workers[i] + ' \'' + virtualenv + timeout_cmd  + \
                         'python ' + str(file_address) + \
                         ' --model=' + str(model) + \
                         ' --data_name=imagenet' + \
                         ' --data_dir=' + data_dir + \
-                        ' --batch_size=' + str(i) + \
+                        ' --batch_size=' + str(bs) + \
                         ' --num_batches=' + str(num_batches) + \
                         ' --num_gpus=' + str(gpu_number) + \
                         ' --variable_update=' + str(variable) + \
@@ -205,12 +248,46 @@ if __name__ == "__main__":
                         ' --local_parameter_device=' + local_parameter_device + \
                         ' --server_protocol=' + server_protocol + \
                         ' --all_reduce_spec=' + all_reduce_spec + \
-                        ' --controller_host=' + controller_host  + \
-                        ' --ps_hosts=' + ps_cmd + \
+                        controller_hosts_cmd + \
+                        ps_hosts_cmd + \
                         ' --worker_hosts=' + worker_cmd  + \
                         ' --gpu_memory_frac_for_testing=' + str(gpu_memory_frac_for_testing) + \
-                        ' --task_index=' + str(b)  + \
-                        ' > ' + remote_log_file_address + '/' + str(model) + '_' + str(i) + '_' + str(variable) + '.txt' + \
+                        ' --task_index=' + str(i)  + \
+                        log_cmd + \
+                        '\' ' + hold_on 
+
+                if len(controllers) > 0:
+                    for i in xrange(len(controllers)):
+                        if i == len(controllers)-1: 
+                            timeout_cmd = ' timeout 300 '
+                            hold_on = ''
+                            log_cmd = log_cmd_default
+                        else:
+                            timeout_cmd = ''
+                            hold_on = ' & '
+                            log_cmd = ''
+                        print("Launch controller-" + str(i) + ':')                        
+                        profile_begin = ''
+                        profile_end = ''
+                        cmd_list[len(ps) + len(workers) + i ] = 'ssh ' + controllers[i] + ' \'' + virtualenv + timeout_cmd  + \
+                        'python ' + str(file_address) + \
+                        ' --model=' + str(model) + \
+                        ' --data_name=imagenet' + \
+                        ' --data_dir=' + data_dir + \
+                        ' --batch_size=' + str(bs) + \
+                        ' --num_batches=' + str(num_batches) + \
+                        ' --num_gpus=' + str(gpu_number) + \
+                        ' --variable_update=' + str(variable) + \
+                        ' --job_name=controller' + \
+                        ' --local_parameter_device=' + local_parameter_device + \
+                        ' --server_protocol=' + server_protocol + \
+                        ' --all_reduce_spec=' + all_reduce_spec + \
+                        controller_hosts_cmd + \
+                        ps_hosts_cmd + \
+                        ' --worker_hosts=' + worker_cmd  + \
+                        ' --gpu_memory_frac_for_testing=' + str(gpu_memory_frac_for_testing) + \
+                        ' --task_index=' + str(i)  + \
+                        log_cmd + \
                         '\' ' + hold_on 
 
                 # for to execute command
@@ -220,9 +297,9 @@ if __name__ == "__main__":
 
                 time.sleep(20)
 
-                # kill ps process
-                for a in range(len(ps)):
-                    cmd_kill[a] = 'ssh ' + ps[a] + kill_cmd
+                # kill all involved process
+                for i in range(len(members)):
+                    cmd_kill[i] = 'ssh ' + members[i] + kill_cmd
                 for kill in cmd_kill:
                     print kill
                     os.system(kill)
@@ -248,7 +325,7 @@ if __name__ == "__main__":
                         if os.path.getsize(log_path) > 0:
                             txt = f.readlines()
 
-                            if txt[-1] != '----------------------------------------------------------------\n':
+                            if txt[-1] != 'x----------------------------------------------------------------x\n':
                                 result_number = '0\n'
                                 print variable, model, i, 'img/sec : ', result_number
 
@@ -277,11 +354,6 @@ if __name__ == "__main__":
                         batch_num_array.index(i) + 1,
                         round(float(result_number)))
                 elif variable == 'distributed_replicated':
-                    sheet2.write(
-                        models.index(model) + 1,
-                        batch_num_array.index(i) + 1,
-                        round(float(result_number)))
-                elif variable == 'distributed_all_reduce':
                     sheet2.write(
                         models.index(model) + 1,
                         batch_num_array.index(i) + 1,
