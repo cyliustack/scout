@@ -23,3 +23,5 @@ sudo pip install keras
 git submodule init
 git submodule update
 git submodule foreach git pull origin master
+cd t-bench && git reset --hard c12839f && cd -
+#cd t-bench && git checkout 9165a70 && cd -
