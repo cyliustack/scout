@@ -1,8 +1,13 @@
 #!/bin/bash
 # Install Required Python Packages
-sudo pip install numpy scipy scikit-learn six pylint xlsxwriter pssh
-sudo pip install h5py 
-sudo pip install keras 
+WITH_SUDO=""
+if [[ $(which sudo) ]]; then 
+    WITH_SUDO="sudo" 
+fi
+
+$WITH_SUDO pip install numpy scipy scikit-learn six pylint xlsxwriter pssh
+$WITH_SUDO pip install h5py 
+$WITH_SUDO pip install keras 
 #sudo pip install librosa  
 # Install OpenCV: reference link -> https://docs.opencv.org/2.4/doc/tutorials/introduction/linux_install/linux_install.html
 #sudo apt-get install build-essential
