@@ -14,12 +14,10 @@ If you want to use profiling tool SOFA, please download it from https://github.c
 ./tools/prepare.sh
 ```  
 
-# Usage: Basic Benchmarking 
+# Usages: Basic Benchmarking 
 ```
 ./scout t-bench resnet50
-./scout t-bench resnet50 --metric=sofa_standard
-./scout j-bench alexnet
-./scout f-bench autoenc
+./tools/get_latency.py resnet50
 ./scout dt-bench ps:alexnet  
 ```
 
