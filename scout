@@ -18,8 +18,7 @@ if __name__ == "__main__":
 
     logdir = './scoutlog'
     #data_dir=''
-    data_dir = '/tmp/dataset/imagenet/'
-    # data_dir = '/tmp/ramdisk/dataset/ImageNetData/ImageNet_TFRecord/'
+    data_dir = '/tmp/ramdisk/dataset/imagenet/'
     # data_dir = '/tmp/ssd/dataset/ImageNetData/ImageNet_TFRecord/'
     num_gpus = 1
     num_batches = 10
@@ -164,8 +163,15 @@ if __name__ == "__main__":
                     sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
                                     program.split('_')[0], '--batch_size=%d'%batch_size, '--num_gpus=%d' %
                                     num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=%s' %
-                                    num_batches, '--all_reduce_spec=%s' %
-                                    all_reduce_spec, '--train_dir=/tmp/mytrain', '--data_name=imagenet', '--data_dir=%s' %
+                                    num_batches, '--hierarchical_copy', '--train_dir=/tmp/mytrain', '--data_name=imagenet', '--data_dir=%s' %
+                                    data_dir])
+            if program == "resnet50_real_nodistortions":
+                subprocess.call(sofa_profile + ['rm', '-r', '/tmp/mytrain'])
+                subprocess.call(
+                    sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
+                                    program.split('_')[0], '--batch_size=%d'%batch_size, '--num_gpus=%d' %
+                                    num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=%s' %
+                                    num_batches, '--hierarchical_copy', '--train_dir=/tmp/mytrain', '--data_name=imagenet', '--nodistortions', '--data_dir=%s' %
                                     data_dir])
             if program == "trivial_real":
                 subprocess.call(
