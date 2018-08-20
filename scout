@@ -17,8 +17,8 @@ from scout_print import *
 if __name__ == "__main__":
 
     logdir = './scoutlog'
-    data_dir=''
-    #data_dir = '/tmp/dataset/imagenet/'
+    #data_dir=''
+    data_dir = '/tmp/dataset/imagenet/'
     # data_dir = '/tmp/ramdisk/dataset/ImageNetData/ImageNet_TFRecord/'
     # data_dir = '/tmp/ssd/dataset/ImageNetData/ImageNet_TFRecord/'
     num_gpus = 1
