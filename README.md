@@ -7,7 +7,13 @@ This benchmark suite will include t-bench, j-bench, and f-bench.
 
 Authors: James Liu (cyliustack@gmail.com), Kevin Lyu (iamorangez@gmail.com), Ryan Wei (sjeemb@gmail.com)
 # Prerequisite
-If you want to use profiling tool SOFA, please download it from https://github.com/cyliustack/sofa.git   
+1. If you want to use profiling tool SOFA, please download it from https://github.com/cyliustack/sofa.git
+2. If you wnat to use benchmark with real data, a small subset of imagenet (TFRecords) can be downloaded from https://goo.gl/Qm2EpF ;        Real data installation is described below (ramdisk mounting is optional to you):
+   ```
+   mkdir -p /tmp/ramdisk
+   tar xvf imagenet_smallset.tar.gz
+   mv imagenet_smallset /tmp/ramdisk/imagenet
+   ```
 
 # Install
 ```
@@ -17,6 +23,7 @@ If you want to use profiling tool SOFA, please download it from https://github.c
 # Usages: Basic Benchmarking 
 ```
 ./scout t-bench resnet50
+./scout t-bench resnet50_real
 ./tools/get_latency.py resnet50
 ./scout dt-bench ps:alexnet  
 ```
