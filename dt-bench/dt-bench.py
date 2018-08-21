@@ -223,21 +223,18 @@ if __name__ == "__main__":
                 
                 if len(workers) > 0:
                     for i in xrange(len(workers)):
-                        controller_cuda_env  = ''
                         if i == len(workers)-1 and len(controllers) == 0 :
                             timeout_cmd = ' timeout 300 '
                             hold_on = ''
                             log_cmd = log_cmd_default
-                            controller_cuda_env = ' export CUDA_VISIBLE_DEVICES=-1; '  
                         else:
                             timeout_cmd = ''
                             hold_on = ' & '
                             log_cmd = ''
-                            controller_cuda_env = ''  
                         print("Launch worker-" + str(i) + ':')                        
                         profile_begin = ''
                         profile_end = ''
-                        cmd_list[len(ps) + i] = 'ssh ' + workers[i] + ' \'' + virtualenv + controller_cuda_env + timeout_cmd  + \
+                        cmd_list[len(ps) + i] = 'ssh ' + workers[i] + ' \'' + virtualenv + timeout_cmd  + \
                         'python ' + str(file_address) + \
                         ' --model=' + str(model) + \
                         ' --data_name=imagenet' + \
@@ -270,7 +267,7 @@ if __name__ == "__main__":
                         print("Launch controller-" + str(i) + ':')                        
                         profile_begin = ''
                         profile_end = ''
-                        cmd_list[len(ps) + len(workers) + i ] = 'ssh ' + controllers[i] + ' \'' + virtualenv + timeout_cmd  + \
+                        cmd_list[len(ps) + len(workers) + i ] = 'ssh ' + controllers[i] + ' \'' + virtualenv + ' export CUDA_VISIBLE_DEVICES=-1; ' +  timeout_cmd  + \
                         'python ' + str(file_address) + \
                         ' --model=' + str(model) + \
                         ' --data_name=imagenet' + \
