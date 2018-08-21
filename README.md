@@ -10,9 +10,9 @@ Authors: James Liu (cyliustack@gmail.com), Kevin Lyu (iamorangez@gmail.com), Rya
 1. If you want to use profiling tool SOFA, please download it from https://github.com/cyliustack/sofa.git
 2. If you wnat to use benchmark with real data, a small subset of imagenet (TFRecords) can be downloaded from https://goo.gl/Qm2EpF ;        Real data installation is described below (ramdisk mounting is optional to you):
    ```
-   mkdir -p /tmp/ramdisk
+   mkdir -p /tmp/ramdisk/dataset
    tar xvf imagenet_smallset.tar.gz
-   mv imagenet_smallset /tmp/ramdisk/imagenet
+   mv imagenet_smallset /tmp/ramdisk/dataset/imagenet
    ```
 
 # Install

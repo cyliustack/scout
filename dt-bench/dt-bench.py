@@ -51,9 +51,8 @@ if __name__ == "__main__":
     print(models)
     num_batches = 20
 
-    min_batch_size = 32
-    max_batch_size = 32 
-    gpu_memory_frac_for_testing = 0.45
+    min_batch_size = 64
+    max_batch_size = 64 
     ps = ['node0','node1']
     workers = ['node0','node1']
     controllers = ['controller0']
@@ -81,7 +80,7 @@ if __name__ == "__main__":
     # if you don't need to use virtualenv, modify to ''
     # virtualenv example = '/home/hong/virtialenv_dir/bin/'
     # virtualenv = 'source ~/setenv.sh ; source ~/tf-v1.5.0-rc1-none/bin/activate ; source ~/apps/sofa/tools/activate.sh ; '
-    # virtualenv = 'source ~/setenv.sh ;  '
+    #virtualenv = 'source ~/setenv.sh ;  '
     virtualenv = ''
 
     profile_begin = ''
@@ -202,7 +201,7 @@ if __name__ == "__main__":
                         print("Launch ps-" + str(i) + ':')                        
                         ps_profile_begin = ''
                         ps_profile_end = ''
-                        cmd_list[i] = 'ssh ' + ps[i] + ' \'' + virtualenv + ps_profile_begin + \
+                        cmd_list[i] = 'ssh ' + ps[i] + ' \'' + virtualenv + ' export CUDA_VISIBLE_DEVICES=-1; ' + ps_profile_begin + \
                                   'python ' + str(file_address) + \
                                   ' --model=' + str(model) + \
                                   ' --data_name=imagenet' + \
@@ -218,25 +217,26 @@ if __name__ == "__main__":
                                   controller_hosts_cmd + \
                                   ps_hosts_cmd + \
                                   ' --worker_hosts=' + worker_cmd + \
-                                  ' --gpu_memory_frac_for_testing=' + str(gpu_memory_frac_for_testing) + \
                                   ' --task_index=' + str(i) + \
                                   ' ' + ps_profile_end + \
                                   ' \' & '
                 
                 if len(workers) > 0:
                     for i in xrange(len(workers)):
+                        controller_cuda_env  = ''
                         if i == len(workers)-1 and len(controllers) == 0 :
                             timeout_cmd = ' timeout 300 '
                             hold_on = ''
-                            log_cmd = log_cmd_default 
+                            log_cmd = log_cmd_default
+                            controller_cuda_env = ' export CUDA_VISIBLE_DEVICES=-1; '  
                         else:
                             timeout_cmd = ''
                             hold_on = ' & '
-                            log_cmd = '' 
+                            log_cmd = ''
                         print("Launch worker-" + str(i) + ':')                        
                         profile_begin = ''
                         profile_end = ''
-                        cmd_list[len(ps) + i] = 'ssh ' + workers[i] + ' \'' + virtualenv + timeout_cmd  + \
+                        cmd_list[len(ps) + i] = 'ssh ' + workers[i] + ' \'' + virtualenv + controller_cuda_env + timeout_cmd  + \
                         'python ' + str(file_address) + \
                         ' --model=' + str(model) + \
                         ' --data_name=imagenet' + \
@@ -252,7 +252,6 @@ if __name__ == "__main__":
                         controller_hosts_cmd + \
                         ps_hosts_cmd + \
                         ' --worker_hosts=' + worker_cmd  + \
-                        ' --gpu_memory_frac_for_testing=' + str(gpu_memory_frac_for_testing) + \
                         ' --task_index=' + str(i)  + \
                         log_cmd + \
                         '\' ' + hold_on 
@@ -286,7 +285,6 @@ if __name__ == "__main__":
                         controller_hosts_cmd + \
                         ps_hosts_cmd + \
                         ' --worker_hosts=' + worker_cmd  + \
-                        ' --gpu_memory_frac_for_testing=' + str(gpu_memory_frac_for_testing) + \
                         ' --task_index=' + str(i)  + \
                         log_cmd + \
                         '\' ' + hold_on 
@@ -295,6 +293,7 @@ if __name__ == "__main__":
                 for cmd in cmd_list:
                     print cmd
                     os.system(cmd)
+
 
                 time.sleep(20)
 

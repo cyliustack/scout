@@ -198,8 +198,7 @@ if __name__ == "__main__":
                            model, '--num_gpus=%d' %
                            num_gpus, '--all_reduce_spec=%s' %
                            all_reduce_spec, '--server_protocol=%s' %
-                           server_protocol, '--data_dir=%s' %
-                           data_dir])
+                           server_protocol ])
         else:
             print_error('format of <PROGRAM> should be like "ps:alexnet"')
     elif benchmark == 'ct-bench':
