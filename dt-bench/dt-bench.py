@@ -80,8 +80,8 @@ if __name__ == "__main__":
     # if you don't need to use virtualenv, modify to ''
     # virtualenv example = '/home/hong/virtialenv_dir/bin/'
     # virtualenv = 'source ~/setenv.sh ; source ~/tf-v1.5.0-rc1-none/bin/activate ; source ~/apps/sofa/tools/activate.sh ; '
-    #virtualenv = 'source ~/setenv.sh ;  '
-    virtualenv = ''
+    virtualenv = ' source ~/setenv.sh ; '
+    #virtualenv = ''
 
     profile_begin = ''
     profile_end = ''
@@ -233,6 +233,7 @@ if __name__ == "__main__":
                             timeout_cmd = ''
                             hold_on = ' & '
                             log_cmd = ''
+                            controller_cuda_env = ''  
                         print("Launch worker-" + str(i) + ':')                        
                         profile_begin = ''
                         profile_end = ''
