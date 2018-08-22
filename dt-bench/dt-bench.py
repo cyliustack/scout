@@ -35,6 +35,9 @@ if __name__ == "__main__":
             help='server protocol to exchange parameters: e.g. grpc, grpc+verbs, grpc+gdr')
     parser.add_argument('--data_dir', type=str, required=False, metavar='DIR',
                         help='path to directory of dataset')
+    parser.add_argument('--enable_gpu_grouping', dest='enable_gpu_grouping', action='store_true')
+    parser.set_defaults(enable_gpu_grouping=True)
+
     args = parser.parse_args()
 
     variable_update = args.variable_updates.split(',')
@@ -127,9 +130,13 @@ if __name__ == "__main__":
 
     # ps and worker port
     # 451952-58000 reserved for private, dynamic and temporary usages
-    ps_rand = random.randrange(49152, 58000)
-    worker_rand = random.randrange(58000, 65036)
-    controller_rand = random.randrange(65036, 65536)
+    #ps_rand = random.randrange(49152, 58000) 
+    #worker_rand = random.randrange(58000, 65036)
+    #controller_rand = random.randrange(65036, 65536)
+    ps_rand = [ random.randrange(49152, 58000)  for _ in range(len(ps))]
+    worker_rand = [ random.randrange(58000, 65036) for _ in range(len(workers))]
+    controller_rand = [ random.randrange(65036, 65536) for _ in range(len(controllers))]
+
     # ps_rand = 50000
     # worker_rand = 50001
     ps_p = [None] * len(ps)
@@ -164,7 +171,7 @@ if __name__ == "__main__":
     if len(ps) > 0:
         for i in range(len(ps)):
         #    ps_p[i] = ps[i].split('@')[1] + ':' + str(ps_rand)
-            ps_p[i] = ps[i] + ':' + str(ps_rand)
+            ps_p[i] = ps[i] + ':' + str(ps_rand[i])
         ps_cmd = ','.join(ps_p)
     else:
         ps_cmd=''
@@ -172,13 +179,13 @@ if __name__ == "__main__":
     if len(workers) > 0:
         for i in range(len(workers)):
         #    worker_p[i] = worker[i].split('@')[1] + ':' + str(worker_rand)
-            worker_p[i] = workers[i] + ':' + str(worker_rand)
+            worker_p[i] = workers[i] + ':' + str(worker_rand[i])
         worker_cmd = ','.join(worker_p)
 
     if len(controllers) >0:
         for i in range(len(controllers)):
         #    worker_p[i] = worker[i].split('@')[1] + ':' + str(worker_rand)
-            controller_p[i] = controllers[i] + ':' + str(controller_rand)
+            controller_p[i] = controllers[i] + ':' + str(controller_rand[i])
         controller_cmd = ','.join(controller_p)
 
     if len(ps) > 0:
@@ -217,12 +224,14 @@ if __name__ == "__main__":
                                   controller_hosts_cmd + \
                                   ps_hosts_cmd + \
                                   ' --worker_hosts=' + worker_cmd + \
+                                  ' --hierarchical_copy' + \
                                   ' --task_index=' + str(i) + \
                                   ' ' + ps_profile_end + \
                                   ' \' & '
                 
                 if len(workers) > 0:
                     for i in xrange(len(workers)):
+                        worker_device_scope = "" 
                         if i == len(workers)-1 and len(controllers) == 0 :
                             timeout_cmd = ' timeout 300 '
                             hold_on = ''
@@ -231,10 +240,17 @@ if __name__ == "__main__":
                             timeout_cmd = ''
                             hold_on = ' & '
                             log_cmd = ''
+
+                        if args.enable_gpu_grouping: 
+                            if i == 0:
+                                worker_device_scope = ' export CUDA_VISIBLE_DEVICES=0,1,3,2,14,15,13,12 ; '
+                            else:
+                                worker_device_scope = ' export CUDA_VISIBLE_DEVICES=4,5,6,7,11,10,9,8 ; '
+
                         print("Launch worker-" + str(i) + ':')                        
                         profile_begin = ''
                         profile_end = ''
-                        cmd_list[len(ps) + i] = 'ssh ' + workers[i] + ' \'' + virtualenv + timeout_cmd  + \
+                        cmd_list[len(ps) + i] = 'ssh ' + workers[i] + ' \'' + virtualenv + worker_device_scope + timeout_cmd  + \
                         'python ' + str(file_address) + \
                         ' --model=' + str(model) + \
                         ' --data_name=imagenet' + \
@@ -250,6 +266,7 @@ if __name__ == "__main__":
                         controller_hosts_cmd + \
                         ps_hosts_cmd + \
                         ' --worker_hosts=' + worker_cmd  + \
+                        ' --hierarchical_copy' + \
                         ' --task_index=' + str(i)  + \
                         log_cmd + \
                         '\' ' + hold_on 
@@ -283,6 +300,7 @@ if __name__ == "__main__":
                         controller_hosts_cmd + \
                         ps_hosts_cmd + \
                         ' --worker_hosts=' + worker_cmd  + \
+                        ' --hierarchical_copy' + \
                         ' --task_index=' + str(i)  + \
                         log_cmd + \
                         '\' ' + hold_on 
@@ -291,6 +309,7 @@ if __name__ == "__main__":
                 for cmd in cmd_list:
                     print cmd
                     os.system(cmd)
+                    time.sleep(1)
 
 
                 time.sleep(20)
