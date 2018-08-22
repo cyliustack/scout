@@ -72,6 +72,9 @@ if __name__ == "__main__":
                 help='server protocol to exchange parameters: e.g. grpc, grpc+verbs, grpc+gdr')
     parser.add_argument('--hierarchical_copy', dest='hierarchical_copy', action='store_true')
     parser.set_defaults(hierarchical_copy=False)
+    parser.add_argument('--enable_gpu_grouping', dest='enable_gpu_grouping', action='store_true')
+    parser.set_defaults(enable_gpu_grouping=False)
+
 
     args = parser.parse_args()
     logdir = os.getcwd() + '/scoutlog'
@@ -192,15 +195,14 @@ if __name__ == "__main__":
                 'varible_update=%s, model=%s' %
                 (variable_update, model))
             subprocess.call(
-                ['python', '%s/dt-bench/dt-bench.py' %
-                           scout_home, '--variable_update=%s' %
-                           variable_update, '--model=%s' %
-                           model, '--num_gpus=%d' %
-                           num_gpus, '--all_reduce_spec=%s' %
-                           all_reduce_spec, '--server_protocol=%s' %
-                           server_protocol ])
+                ['python', '%s/dt-bench/dt-bench.py' % scout_home,
+                            '--variable_update=%s' % variable_update,
+                            '--model=%s' % model,
+                            '--num_gpus=%d' % num_gpus, 
+                            '--all_reduce_spec=%s' % all_reduce_spec, 
+                            '--server_protocol=%s' % server_protocol])
         else:
-            print_error('format of <PROGRAM> should be like "ps:alexnet"')
+            print_error('format of <PROGRAM> should be like "parameter_server:alexnet"')
     elif benchmark == 'ct-bench':
         print('Execute %s' % benchmark)
         subprocess.call(['mkdir', '-p', logdir])
