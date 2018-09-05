@@ -16,6 +16,7 @@ if __name__ == "__main__":
     # RDMA_DEVICE=mlx5_3).
     server_protocol = 'grpc'
     data_dir = ''
+    timeout = 200
 
     parser = argparse.ArgumentParser(description='DT-Bench')
     parser.add_argument(
@@ -27,6 +28,9 @@ if __name__ == "__main__":
     parser.add_argument(
         '--num_gpus', type=int, required=False, metavar='n_GPUs',
             help='number of GPUs')
+    parser.add_argument(
+        '--timeout', type=int, required=False, metavar='seconds',
+            help='timeout')
     parser.add_argument(
         '--all_reduce_spec', type=str, required=False, metavar='SPEC',
             help='all_reduce approach: e.g. nccl, xring')
@@ -50,14 +54,16 @@ if __name__ == "__main__":
         server_protocol = args.server_protocol
     if args.data_dir is not None:
         data_dir = args.data_dir
+    if args.timeout is not None:
+        timeout = args.timeout
     print(variable_update)
     print(models)
     num_batches = 20
 
     min_batch_size = 64
     max_batch_size = 64 
-    ps = ['node0','node1']
-    workers = ['node0','node1']
+    ps = ['node0','node0','node0','node0']
+    workers = ['node0','node0','node0','node0']
     controllers = ['controller0']
 
     if variable_update[0] == 'distributed_all_reduce':
@@ -233,7 +239,7 @@ if __name__ == "__main__":
                     for i in xrange(len(workers)):
                         worker_device_scope = "" 
                         if i == len(workers)-1 and len(controllers) == 0 :
-                            timeout_cmd = ' timeout 300 '
+                            timeout_cmd = ' timeout %d '%timeout
                             hold_on = ''
                             log_cmd = log_cmd_default
                         else:
@@ -241,11 +247,29 @@ if __name__ == "__main__":
                             hold_on = ' & '
                             log_cmd = ''
 
-                        if args.enable_gpu_grouping: 
-                            if i == 0:
-                                worker_device_scope = ' export CUDA_VISIBLE_DEVICES=0,1,3,2,14,15,13,12 ; '
-                            else:
-                                worker_device_scope = ' export CUDA_VISIBLE_DEVICES=4,5,6,7,11,10,9,8 ; '
+                        if len(workers) == 2:
+                            if args.enable_gpu_grouping: 
+                                if i == 0:
+                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=0,1,3,2,14,15,13,12 ; '
+                                    #worker_device_scope = ' export CUDA_VISIBLE_DEVICES=0,1,4,5,8,9,12,13 ; '
+                                else:
+                                    
+                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=4,5,6,7,11,10,9,8 ; '
+                                    #worker_device_scope = ' export CUDA_VISIBLE_DEVICES=2,3,6,7,10,11,14,15 ; '
+                        elif len(workers) == 4:
+                            if args.enable_gpu_grouping: 
+                                if i == 0:
+                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=0,1,3,2 ; '
+                                    #worker_device_scope = ' export CUDA_VISIBLE_DEVICES=0,1,4,5,8,9,12,13 ; '
+                                elif i == 1:
+                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=14,15,13,12; '
+                                    #worker_device_scope = ' export CUDA_VISIBLE_DEVICES=2,3,6,7,10,11,14,15 ; '
+                                elif i == 2:
+                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=4,5,6,7 ; '
+                                elif i == 3:
+                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=11,10,9,8 ; '
+                        else:
+                            worker_device_scope=''
 
                         print("Launch worker-" + str(i) + ':')                        
                         profile_begin = ''
@@ -274,7 +298,7 @@ if __name__ == "__main__":
                 if len(controllers) > 0:
                     for i in xrange(len(controllers)):
                         if i == len(controllers)-1: 
-                            timeout_cmd = ' timeout 300 '
+                            timeout_cmd = ' timeout %d '%timeout
                             hold_on = ''
                             log_cmd = log_cmd_default
                         else:
