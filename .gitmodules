@@ -1,9 +1,6 @@
 [submodule "t-bench"]
 	path = t-bench
     url = https://github.com/cyliustack/benchmarks.git
-[submodule "pytorch"]
-	path = p-bench
-	url = https://github.com/pytorch/examples.git 
 [submodule "p-bench"]
 	path = p-bench
 	url = git://github.com/pytorch/examples.git
