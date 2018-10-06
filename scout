@@ -34,6 +34,7 @@ if __name__ == "__main__":
     program_args = []
     metric = []
     sofa_profile = []
+    timeout = 200
 
     parser = argparse.ArgumentParser(description='Scout')
     parser.add_argument(
@@ -50,6 +51,8 @@ if __name__ == "__main__":
                         help='number of batches (a.k.a. steps or iterations')
     parser.add_argument('--batch_size', type=int, required=False, metavar='N',
                         help='batch size (e.g. 32,64')
+    parser.add_argument('--timeout', type=int, required=False, metavar='N',
+                        help='timeout in seconds')
     parser.add_argument(
         'benchmark', type=str, nargs=1, metavar='<BENCHMARK_SUITE>',
             help='specify a benchmark to run: e.g. f-bench, j-bench, t-bench')
@@ -89,6 +92,8 @@ if __name__ == "__main__":
         num_batches = args.num_batches
     if args.batch_size is not None:
         batch_size = args.batch_size
+    if args.batch_size is not None:
+        timeout = args.timeout
     if args.server_protocol is not None:
         server_protocol = args.server_protocol
 
@@ -201,7 +206,8 @@ if __name__ == "__main__":
                             '--model=%s' % model,
                             '--num_gpus=%d' % num_gpus, 
                             '--all_reduce_spec=%s' % all_reduce_spec, 
-                            '--server_protocol=%s' % server_protocol])
+                            '--server_protocol=%s' % server_protocol,
+                            '--timeout=%d' % timeout])
         else:
             print_error('format of <PROGRAM> should be like "parameter_server:alexnet"')
     elif benchmark == 'p-bench':
