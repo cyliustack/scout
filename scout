@@ -116,21 +116,21 @@ if __name__ == "__main__":
  
     # program_args = args.program_args
 
-    print metric
+    print(metric)
     if metric == "sofa_standard":
         sofa_profile = ['sofa', 'stat']
 
     print_info("SCOUT_HOME = %s" % scout_home)
 
     if benchmark == 'f-bench':
-        print('Execute %s' % benchmark)
+        print(('Execute %s' % benchmark))
         subprocess.call(['mkdir', '-p', logdir])
         if program_args is not None:
             os.chdir('f-bench')
             if program == "seq2seq":
                 print("Try to run seq2seq (RNN)")
     elif benchmark == 't-bench':
-        print('Execute %s' % benchmark)
+        print(('Execute %s' % benchmark))
         subprocess.call(['mkdir', '-p', logdir])
         if program_args is not None:
             os.chdir('t-bench/scripts/tf_cnn_benchmarks')
@@ -214,7 +214,7 @@ if __name__ == "__main__":
         print_info('Execute %s' % benchmark)
         subprocess.call('python p-bench/imagenet/main.py -a %s --lr 0.01 %s' % (program, data_dir), shell=True)
     elif benchmark == 'ct-bench':
-        print('Execute %s' % benchmark)
+        print(('Execute %s' % benchmark))
         subprocess.call(['mkdir', '-p', logdir])
         if program_args is not None:
             os.chdir('t-bench/scripts/tf_cnn_benchmarks')
