@@ -18,7 +18,8 @@ if __name__ == "__main__":
 
     logdir = './scoutlog'
     #data_dir=''
-    data_dir = '/tmp/ramdisk/dataset/imagenet/'
+    data_dir='/home/cyliu/mini-imagenet'
+    #data_dir = '/tmp/ramdisk/dataset/imagenet/'
     # data_dir = '/tmp/ssd/dataset/ImageNetData/ImageNet_TFRecord/'
     num_gpus = 1
     num_batches = 10
@@ -166,7 +167,7 @@ if __name__ == "__main__":
                     sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
                                     program.split('_')[0], '--batch_size=%d'%batch_size, '--num_gpus=%d' %
                                     num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=%s' %
-                                    num_batches, '--hierarchical_copy', '--train_dir=/tmp/mytrain', '--data_name=imagenet', '--data_dir=%s' %
+                                    num_batches, '--train_dir=/tmp/mytrain', '--data_name=imagenet', '--data_dir=%s' %
                                     data_dir])
             if program == "resnet50_real_nodistortions":
                 subprocess.call(sofa_profile + ['rm', '-r', '/tmp/mytrain'])
@@ -174,7 +175,7 @@ if __name__ == "__main__":
                     sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
                                     program.split('_')[0], '--batch_size=%d'%batch_size, '--num_gpus=%d' %
                                     num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=%s' %
-                                    num_batches, '--hierarchical_copy', '--train_dir=/tmp/mytrain', '--data_name=imagenet', '--nodistortions', '--data_dir=%s' %
+                                    num_batches, '--train_dir=/tmp/mytrain', '--data_name=imagenet', '--nodistortions', '--data_dir=%s' %
                                     data_dir])
             if program == "trivial_real":
                 subprocess.call(
@@ -203,6 +204,9 @@ if __name__ == "__main__":
                             '--server_protocol=%s' % server_protocol])
         else:
             print_error('format of <PROGRAM> should be like "parameter_server:alexnet"')
+    elif benchmark == 'p-bench':
+        print_info('Execute %s' % benchmark)
+        subprocess.call('python p-bench/imagenet/main.py -a %s --lr 0.01 %s' % (program, data_dir), shell=True)
     elif benchmark == 'ct-bench':
         print('Execute %s' % benchmark)
         subprocess.call(['mkdir', '-p', logdir])
