@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import os
 import xlsxwriter
 import random
@@ -230,7 +230,6 @@ if __name__ == "__main__":
                                   controller_hosts_cmd + \
                                   ps_hosts_cmd + \
                                   ' --worker_hosts=' + worker_cmd + \
-                                  ' --hierarchical_copy' + \
                                   ' --task_index=' + str(i) + \
                                   ' ' + ps_profile_end + \
                                   ' \' & '
@@ -247,29 +246,7 @@ if __name__ == "__main__":
                             hold_on = ' & '
                             log_cmd = ''
 
-                        if len(workers) == 2:
-                            if args.enable_gpu_grouping: 
-                                if i == 0:
-                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=0,1,3,2,14,15,13,12 ; '
-                                    #worker_device_scope = ' export CUDA_VISIBLE_DEVICES=0,1,4,5,8,9,12,13 ; '
-                                else:
-                                    
-                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=4,5,6,7,11,10,9,8 ; '
-                                    #worker_device_scope = ' export CUDA_VISIBLE_DEVICES=2,3,6,7,10,11,14,15 ; '
-                        elif len(workers) == 4:
-                            if args.enable_gpu_grouping: 
-                                if i == 0:
-                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=0,1,3,2 ; '
-                                    #worker_device_scope = ' export CUDA_VISIBLE_DEVICES=0,1,4,5,8,9,12,13 ; '
-                                elif i == 1:
-                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=14,15,13,12; '
-                                    #worker_device_scope = ' export CUDA_VISIBLE_DEVICES=2,3,6,7,10,11,14,15 ; '
-                                elif i == 2:
-                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=4,5,6,7 ; '
-                                elif i == 3:
-                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=11,10,9,8 ; '
-                        else:
-                            worker_device_scope=''
+                        worker_device_scope = ' export CUDA_VISIBLE_DEVICES=%d;'%(i)
 
                         print(("Launch worker-" + str(i) + ':'))                        
                         profile_begin = ''
@@ -290,7 +267,6 @@ if __name__ == "__main__":
                         controller_hosts_cmd + \
                         ps_hosts_cmd + \
                         ' --worker_hosts=' + worker_cmd  + \
-                        ' --hierarchical_copy' + \
                         ' --task_index=' + str(i)  + \
                         log_cmd + \
                         '\' ' + hold_on 
@@ -324,7 +300,6 @@ if __name__ == "__main__":
                         controller_hosts_cmd + \
                         ps_hosts_cmd + \
                         ' --worker_hosts=' + worker_cmd  + \
-                        ' --hierarchical_copy' + \
                         ' --task_index=' + str(i)  + \
                         log_cmd + \
                         '\' ' + hold_on 
