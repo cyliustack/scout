@@ -29,5 +29,5 @@ git submodule init
 git submodule update
 git submodule foreach git pull origin master
 cd t-bench && git reset --hard c12839f && cd -
-cd p-bench && git pull & cd -
-#cd t-bench && git checkout 9165a70 && cd -
+cd t-bench && git checkout 9165a70 && cd -
+#cd p-bench && git pull & cd -
