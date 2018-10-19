@@ -62,8 +62,8 @@ if __name__ == "__main__":
 
     min_batch_size = 64
     max_batch_size = 64 
-    ps = ['node0','node0','node0','node0']
-    workers = ['node0','node0','node0','node0']
+    ps = ['node0','node1']
+    workers = ['node0','node1']
     controllers = ['controller0']
 
     if variable_update[0] == 'distributed_all_reduce':
@@ -210,8 +210,8 @@ if __name__ == "__main__":
             for bs in doubling_range(min_batch_size, (max_batch_size + 1)):
                 log_cmd_default = ' > ' + remote_log_file_address + '/' + str(model) + '_' + str(bs) + '_' + str(variable) + '.txt'
                 if len(ps) > 0:
-                    for i in xrange(len(ps)):
-                        print("Launch ps-" + str(i) + ':')                        
+                    for i in range(len(ps)):
+                        print(("Launch ps-" + str(i) + ':'))                        
                         ps_profile_begin = ''
                         ps_profile_end = ''
                         cmd_list[i] = 'ssh ' + ps[i] + ' \'' + virtualenv + ' export CUDA_VISIBLE_DEVICES=-1; ' + ps_profile_begin + \
@@ -236,7 +236,7 @@ if __name__ == "__main__":
                                   ' \' & '
                 
                 if len(workers) > 0:
-                    for i in xrange(len(workers)):
+                    for i in range(len(workers)):
                         worker_device_scope = "" 
                         if i == len(workers)-1 and len(controllers) == 0 :
                             timeout_cmd = ' timeout %d '%timeout
@@ -271,7 +271,7 @@ if __name__ == "__main__":
                         else:
                             worker_device_scope=''
 
-                        print("Launch worker-" + str(i) + ':')                        
+                        print(("Launch worker-" + str(i) + ':'))                        
                         profile_begin = ''
                         profile_end = ''
                         cmd_list[len(ps) + i] = 'ssh ' + workers[i] + ' \'' + virtualenv + worker_device_scope + timeout_cmd  + \
@@ -296,7 +296,7 @@ if __name__ == "__main__":
                         '\' ' + hold_on 
 
                 if len(controllers) > 0:
-                    for i in xrange(len(controllers)):
+                    for i in range(len(controllers)):
                         if i == len(controllers)-1: 
                             timeout_cmd = ' timeout %d '%timeout
                             hold_on = ''
@@ -305,7 +305,7 @@ if __name__ == "__main__":
                             timeout_cmd = ''
                             hold_on = ' & '
                             log_cmd = ''
-                        print("Launch controller-" + str(i) + ':')                        
+                        print(("Launch controller-" + str(i) + ':'))                        
                         profile_begin = ''
                         profile_end = ''
                         cmd_list[len(ps) + len(workers) + i ] = 'ssh ' + controllers[i] + ' \'' + virtualenv + ' export CUDA_VISIBLE_DEVICES=-1; ' +  timeout_cmd  + \
@@ -331,7 +331,7 @@ if __name__ == "__main__":
 
                 # for to execute command
                 for cmd in cmd_list:
-                    print cmd
+                    print(cmd)
                     os.system(cmd)
                     time.sleep(1)
 
@@ -342,17 +342,17 @@ if __name__ == "__main__":
                 for i in range(len(members)):
                     cmd_kill[i] = 'ssh ' + members[i] + kill_cmd
                 for kill in cmd_kill:
-                    print kill
+                    print(kill)
                     os.system(kill)
 
                 time.sleep(20)
                 # receive log file
 
-    print download_remote_logs_cmd
+    print(download_remote_logs_cmd)
     os.system(download_remote_logs_cmd)
     os.remove('./kill.sh')
 
-    print relocate_remote_logs_cmd
+    print(relocate_remote_logs_cmd)
     os.system(relocate_remote_logs_cmd)
 
     for variable in variable_update:
@@ -360,7 +360,7 @@ if __name__ == "__main__":
             for i in doubling_range(min_batch_size, (max_batch_size + 1)):
                 log_path = local_log_address + '/' + \
                     str(model) + '_' + str(i) + '_' + str(variable) + '.txt'
-                print log_path
+                print(log_path)
                 if os.path.exists(log_path):
                     with open(log_path) as f:
                         if os.path.getsize(log_path) > 0:
@@ -368,7 +368,7 @@ if __name__ == "__main__":
 
                             if txt[-1] != 'x----------------------------------------------------------------x\n':
                                 result_number = '0\n'
-                                print variable, model, i, 'img/sec : ', result_number
+                                print(variable, model, i, 'img/sec : ', result_number)
 
                             else:
                                 keys = [r for r in range(1, len(txt) + 1)]
@@ -382,7 +382,7 @@ if __name__ == "__main__":
                                 result[2].split(': ')
 
                                 result_number = result[2].split(': ')[1]
-                                print variable, model, i, 'img/sec : ', result_number
+                                print(variable, model, i, 'img/sec : ', result_number)
                         else:
                             result_number = '0\n'
                 else:
