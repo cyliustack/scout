@@ -3,6 +3,7 @@ import os
 import xlsxwriter
 import random
 import time
+import socket
 import argparse
 # multimachine benchmarks configure
 #-------------------------------------------------------------------------
@@ -90,14 +91,13 @@ if __name__ == "__main__":
     # virtualenv example = '/home/hong/virtialenv_dir/bin/'
     # virtualenv = 'source ~/setenv.sh ; source ~/tf-v1.5.0-rc1-none/bin/activate ; source ~/apps/sofa/tools/activate.sh ; '
     # virtualenv = ' source ~/setenv.sh ; '
+    # virtualenv = ' source ~/tf-1.10-env/bin/activate ; '
     virtualenv = ''
 
     profile_begin = ''
     profile_end = ''
-    #profile_begin = 'sofa record \"'
-    #profile_end = '\"'
-    ps_profile_begin = ''
-    ps_profile_end = ''
+    profile_begin = 'sofa record \"'
+    profile_end = '\"'
     # ps_profile_begin = 'source ~/apps/sofa/tools/activate && sofa record \"'
     # ps_profile_end = '\"'
 
@@ -234,6 +234,15 @@ if __name__ == "__main__":
                                   ' ' + ps_profile_end + \
                                   ' \' & '
                 
+                
+                
+                b_all_in_one_node = True
+                for worker in workers:
+                    ip_worker = socket.gethostbyname(worker)
+                    ip_worker0 = socket.gethostbyname(workers[0])
+                    if ip_worker != ip_worker0:
+                         b_all_in_one_node = False
+                         print("All workers are not in one node!")
                 if len(workers) > 0:
                     for i in range(len(workers)):
                         worker_device_scope = "" 
@@ -245,8 +254,9 @@ if __name__ == "__main__":
                             timeout_cmd = ''
                             hold_on = ' & '
                             log_cmd = ''
-
-                        worker_device_scope = ' export CUDA_VISIBLE_DEVICES=%d;'%(i)
+                      
+                        if b_all_in_one_node:
+                            worker_device_scope = ' export CUDA_VISIBLE_DEVICES=%d;'%(i)
 
                         print(("Launch worker-" + str(i) + ':'))                        
                         profile_begin = ''

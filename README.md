@@ -7,11 +7,12 @@ This benchmark suite will include t-bench, j-bench, and f-bench.
 
 Authors: James Liu (cyliustack@gmail.com), Kevin Lyu (iamorangez@gmail.com), Ryan Wei (sjeemb@gmail.com)
 # Prerequisite
-1. If you want to use profiling tool SOFA, please download it from https://github.com/cyliustack/sofa.git
-2. If you wnat to use benchmark with real data, 
+1. tensorflow >= 1.9.0
+2. If you want to use profiling tool SOFA, please download it from https://github.com/cyliustack/sofa.git
+3. If you wnat to use benchmark with real data, 
    * a small subset of imagenet (TFRecords-only) can be downloaded from https://drive.google.com/open?id=1fhHzOLaNSYRNHo7noM159m2uSXFS5-wx
    * a small subset of imagenet (raw data only) can be downloaded from,  https://drive.google.com/open?id=11A5qflaLTf8wt_gnkZfABTSJ0BR7bCi7
-3. Real data installation is described below (ramdisk mounting is optional to you):   
+4. Real data installation is described below (ramdisk mounting is optional to you):   
    ```
    mkdir -p /tmp/ramdisk/dataset
    tar xvf imagenet_smallset.tar.gz
