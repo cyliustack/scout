@@ -1,8 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import os
 import xlsxwriter
 import random
 import time
+import socket
 import argparse
 # multimachine benchmarks configure
 #-------------------------------------------------------------------------
@@ -62,8 +63,8 @@ if __name__ == "__main__":
 
     min_batch_size = 64
     max_batch_size = 64 
-    ps = ['node0','node0','node0','node0']
-    workers = ['node0','node0','node0','node0']
+    ps = ['node0','node1']
+    workers = ['node0','node1']
     controllers = ['controller0']
 
     if variable_update[0] == 'distributed_all_reduce':
@@ -90,14 +91,13 @@ if __name__ == "__main__":
     # virtualenv example = '/home/hong/virtialenv_dir/bin/'
     # virtualenv = 'source ~/setenv.sh ; source ~/tf-v1.5.0-rc1-none/bin/activate ; source ~/apps/sofa/tools/activate.sh ; '
     # virtualenv = ' source ~/setenv.sh ; '
+    # virtualenv = ' source ~/tf-1.10-env/bin/activate ; '
     virtualenv = ''
 
     profile_begin = ''
     profile_end = ''
-    #profile_begin = 'sofa record \"'
-    #profile_end = '\"'
-    ps_profile_begin = ''
-    ps_profile_end = ''
+    profile_begin = 'sofa record \"'
+    profile_end = '\"'
     # ps_profile_begin = 'source ~/apps/sofa/tools/activate && sofa record \"'
     # ps_profile_end = '\"'
 
@@ -210,8 +210,8 @@ if __name__ == "__main__":
             for bs in doubling_range(min_batch_size, (max_batch_size + 1)):
                 log_cmd_default = ' > ' + remote_log_file_address + '/' + str(model) + '_' + str(bs) + '_' + str(variable) + '.txt'
                 if len(ps) > 0:
-                    for i in xrange(len(ps)):
-                        print("Launch ps-" + str(i) + ':')                        
+                    for i in range(len(ps)):
+                        print(("Launch ps-" + str(i) + ':'))                        
                         ps_profile_begin = ''
                         ps_profile_end = ''
                         cmd_list[i] = 'ssh ' + ps[i] + ' \'' + virtualenv + ' export CUDA_VISIBLE_DEVICES=-1; ' + ps_profile_begin + \
@@ -230,13 +230,21 @@ if __name__ == "__main__":
                                   controller_hosts_cmd + \
                                   ps_hosts_cmd + \
                                   ' --worker_hosts=' + worker_cmd + \
-                                  ' --hierarchical_copy' + \
                                   ' --task_index=' + str(i) + \
                                   ' ' + ps_profile_end + \
                                   ' \' & '
                 
+                
+                
+                b_all_in_one_node = True
+                for worker in workers:
+                    ip_worker = socket.gethostbyname(worker)
+                    ip_worker0 = socket.gethostbyname(workers[0])
+                    if ip_worker != ip_worker0:
+                         b_all_in_one_node = False
+                         print("All workers are not in one node!")
                 if len(workers) > 0:
-                    for i in xrange(len(workers)):
+                    for i in range(len(workers)):
                         worker_device_scope = "" 
                         if i == len(workers)-1 and len(controllers) == 0 :
                             timeout_cmd = ' timeout %d '%timeout
@@ -246,32 +254,11 @@ if __name__ == "__main__":
                             timeout_cmd = ''
                             hold_on = ' & '
                             log_cmd = ''
+                      
+                        if b_all_in_one_node:
+                            worker_device_scope = ' export CUDA_VISIBLE_DEVICES=%d;'%(i)
 
-                        if len(workers) == 2:
-                            if args.enable_gpu_grouping: 
-                                if i == 0:
-                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=0,1,3,2,14,15,13,12 ; '
-                                    #worker_device_scope = ' export CUDA_VISIBLE_DEVICES=0,1,4,5,8,9,12,13 ; '
-                                else:
-                                    
-                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=4,5,6,7,11,10,9,8 ; '
-                                    #worker_device_scope = ' export CUDA_VISIBLE_DEVICES=2,3,6,7,10,11,14,15 ; '
-                        elif len(workers) == 4:
-                            if args.enable_gpu_grouping: 
-                                if i == 0:
-                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=0,1,3,2 ; '
-                                    #worker_device_scope = ' export CUDA_VISIBLE_DEVICES=0,1,4,5,8,9,12,13 ; '
-                                elif i == 1:
-                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=14,15,13,12; '
-                                    #worker_device_scope = ' export CUDA_VISIBLE_DEVICES=2,3,6,7,10,11,14,15 ; '
-                                elif i == 2:
-                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=4,5,6,7 ; '
-                                elif i == 3:
-                                    worker_device_scope = ' export CUDA_VISIBLE_DEVICES=11,10,9,8 ; '
-                        else:
-                            worker_device_scope=''
-
-                        print("Launch worker-" + str(i) + ':')                        
+                        print(("Launch worker-" + str(i) + ':'))                        
                         profile_begin = ''
                         profile_end = ''
                         cmd_list[len(ps) + i] = 'ssh ' + workers[i] + ' \'' + virtualenv + worker_device_scope + timeout_cmd  + \
@@ -290,13 +277,12 @@ if __name__ == "__main__":
                         controller_hosts_cmd + \
                         ps_hosts_cmd + \
                         ' --worker_hosts=' + worker_cmd  + \
-                        ' --hierarchical_copy' + \
                         ' --task_index=' + str(i)  + \
                         log_cmd + \
                         '\' ' + hold_on 
 
                 if len(controllers) > 0:
-                    for i in xrange(len(controllers)):
+                    for i in range(len(controllers)):
                         if i == len(controllers)-1: 
                             timeout_cmd = ' timeout %d '%timeout
                             hold_on = ''
@@ -305,7 +291,7 @@ if __name__ == "__main__":
                             timeout_cmd = ''
                             hold_on = ' & '
                             log_cmd = ''
-                        print("Launch controller-" + str(i) + ':')                        
+                        print(("Launch controller-" + str(i) + ':'))                        
                         profile_begin = ''
                         profile_end = ''
                         cmd_list[len(ps) + len(workers) + i ] = 'ssh ' + controllers[i] + ' \'' + virtualenv + ' export CUDA_VISIBLE_DEVICES=-1; ' +  timeout_cmd  + \
@@ -324,14 +310,13 @@ if __name__ == "__main__":
                         controller_hosts_cmd + \
                         ps_hosts_cmd + \
                         ' --worker_hosts=' + worker_cmd  + \
-                        ' --hierarchical_copy' + \
                         ' --task_index=' + str(i)  + \
                         log_cmd + \
                         '\' ' + hold_on 
 
                 # for to execute command
                 for cmd in cmd_list:
-                    print cmd
+                    print(cmd)
                     os.system(cmd)
                     time.sleep(1)
 
@@ -342,17 +327,17 @@ if __name__ == "__main__":
                 for i in range(len(members)):
                     cmd_kill[i] = 'ssh ' + members[i] + kill_cmd
                 for kill in cmd_kill:
-                    print kill
+                    print(kill)
                     os.system(kill)
 
                 time.sleep(20)
                 # receive log file
 
-    print download_remote_logs_cmd
+    print(download_remote_logs_cmd)
     os.system(download_remote_logs_cmd)
     os.remove('./kill.sh')
 
-    print relocate_remote_logs_cmd
+    print(relocate_remote_logs_cmd)
     os.system(relocate_remote_logs_cmd)
 
     for variable in variable_update:
@@ -360,7 +345,7 @@ if __name__ == "__main__":
             for i in doubling_range(min_batch_size, (max_batch_size + 1)):
                 log_path = local_log_address + '/' + \
                     str(model) + '_' + str(i) + '_' + str(variable) + '.txt'
-                print log_path
+                print(log_path)
                 if os.path.exists(log_path):
                     with open(log_path) as f:
                         if os.path.getsize(log_path) > 0:
@@ -368,7 +353,7 @@ if __name__ == "__main__":
 
                             if txt[-1] != 'x----------------------------------------------------------------x\n':
                                 result_number = '0\n'
-                                print variable, model, i, 'img/sec : ', result_number
+                                print(variable, model, i, 'img/sec : ', result_number)
 
                             else:
                                 keys = [r for r in range(1, len(txt) + 1)]
@@ -382,7 +367,7 @@ if __name__ == "__main__":
                                 result[2].split(': ')
 
                                 result_number = result[2].split(': ')[1]
-                                print variable, model, i, 'img/sec : ', result_number
+                                print(variable, model, i, 'img/sec : ', result_number)
                         else:
                             result_number = '0\n'
                 else:

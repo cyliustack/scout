@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import subprocess
 import sqlite3
 import pandas as pd
@@ -18,8 +18,8 @@ if __name__ == "__main__":
 
     logdir = './scoutlog'
     #data_dir=''
-    data_dir='/home/cyliu/mini-imagenet'
-    #data_dir = '/tmp/ramdisk/dataset/imagenet/'
+    #data_dir='/home/cyliu/mini-imagenet'
+    data_dir = '/tmp/imagenet/'
     # data_dir = '/tmp/ssd/dataset/ImageNetData/ImageNet_TFRecord/'
     num_gpus = 1
     num_batches = 10
@@ -80,6 +80,9 @@ if __name__ == "__main__":
     parser.set_defaults(hierarchical_copy=False)
     parser.add_argument('--enable_gpu_grouping', dest='enable_gpu_grouping', action='store_true')
     parser.set_defaults(enable_gpu_grouping=False)
+    parser.add_argument('--use_real_data', dest='use_real_data', action='store_true')
+    parser.set_defaults(use_real_data=False)
+
 
 
     args = parser.parse_args()
@@ -98,7 +101,11 @@ if __name__ == "__main__":
         timeout = args.timeout
     if args.server_protocol is not None:
         server_protocol = args.server_protocol
-
+    
+    realdata_options='--data_name=imagenet'
+    if args.use_real_data:
+        realdata_options = '--train_dir=/tmp/mytrain --data_name=imagenet --data_dir=%s' % (data_dir)
+     
     benchmark = args.benchmark[0]
     program = args.program[0]
     metric = args.metric
@@ -118,19 +125,24 @@ if __name__ == "__main__":
  
     # program_args = args.program_args
 
-    print metric
+    print(metric)
     if metric == "sofa_standard":
         sofa_profile = ['sofa', 'stat']
 
+    print_info("SCOUT_HOME = %s" % scout_home)
+
+    if args.use_real_data:
+        subprocess.call(sofa_profile + ['rm', '-r', '/tmp/mytrain'])
+
     if benchmark == 'f-bench':
-        print('Execute %s' % benchmark)
+        print(('Execute %s' % benchmark))
         subprocess.call(['mkdir', '-p', logdir])
         if program_args is not None:
             os.chdir('f-bench')
             if program == "seq2seq":
                 print("Try to run seq2seq (RNN)")
     elif benchmark == 't-bench':
-        print('Execute %s' % benchmark)
+        print(('Execute %s' % benchmark))
         subprocess.call(['mkdir', '-p', logdir])
         if program_args is not None:
             os.chdir(scout_home + 't-bench/scripts/tf_cnn_benchmarks')
@@ -139,58 +151,25 @@ if __name__ == "__main__":
                     sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
                                     program, '--batch_size=64', '--num_gpus=%d' %
                                     num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=%s' %
-                                    num_batches ])
+                                    num_batches, realdata_options])
             if program == "vgg16":
                 subprocess.call(
                     sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
                                     program, '--batch_size=%d'%batch_size, '--num_gpus=%d' %
                                     num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=%s' %
-                                    num_batches ])
+                                    num_batches, realdata_options])
             if program == "inception3":
-                subprocess.call(
-                    sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
-                                    program, '--batch_size=%d'%batch_size, '--num_gpus=%d' %
-                                    num_gpus, '--local_parameter_device=cpu', '--num_batches=%s' %
-                                    num_batches, '--all_reduce_spec=%s' %
-                                    all_reduce_spec])
+                subprocess.call( sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' % program, '--batch_size=%d'%batch_size, '--num_gpus=%d' % num_gpus, '--variable_update=parameter_server', '--local_parameter_device=cpu', '--num_batches=%s' % num_batches, realdata_options])
+
             if program == "resnet50":
-                subprocess.call(
-                    sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
-                                    program, '--batch_size=%d'%batch_size, '--num_gpus=%d' %
-                                    num_gpus, '--variable_update=parameter_server', '--local_parameter_device=cpu', '--num_batches=%s' %
-                                    num_batches])
+                subprocess.call( sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' % program, '--batch_size=%d'%batch_size, '--num_gpus=%d' % num_gpus, '--variable_update=parameter_server', '--local_parameter_device=cpu', '--num_batches=%s' % num_batches, realdata_options])
+
             if program == "resnet152":
                 subprocess.call(
                     sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
                                     program, '--batch_size=64', '--num_gpus=%d' %
-                                    num_gpus, '--variable_update=parameter_server', '--local_parameter_device=cpu', '--num_batches=%s' %
-                                    num_batches])
-
-            if program == "resnet50_real":
-                subprocess.call(sofa_profile + ['rm', '-r', '/tmp/mytrain'])
-                subprocess.call(
-                    sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
-                                    program.split('_')[0], '--batch_size=%d'%batch_size, '--num_gpus=%d' %
-                                    num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=%s' %
-                                    num_batches, '--train_dir=/tmp/mytrain', '--data_name=imagenet', '--data_dir=%s' %
-                                    data_dir])
-            if program == "resnet50_real_nodistortions":
-                subprocess.call(sofa_profile + ['rm', '-r', '/tmp/mytrain'])
-                subprocess.call(
-                    sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
-                                    program.split('_')[0], '--batch_size=%d'%batch_size, '--num_gpus=%d' %
-                                    num_gpus, '--variable_update=replicated', '--local_parameter_device=gpu', '--num_batches=%s' %
-                                    num_batches, '--train_dir=/tmp/mytrain', '--data_name=imagenet', '--nodistortions', '--data_dir=%s' %
-                                    data_dir])
-            if program == "trivial_real":
-                subprocess.call(
-                    sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
-                                    program.split('_')[0], '--batch_size=%d'%batch_size, '--num_gpus=%d' %
-                                    num_gpus, '--local_parameter_device=cpu', '--num_batches=%s' %
-                                    num_batches, '--all_reduce_spec=%s' %
-                                    all_reduce_spec, '--data_name=imagenet', '--data_dir=%s' %
-                                    data_dir])
-
+                                    num_gpus, '--variable_update=parameter_server', '--local_parameter_device=cpu', '--num_batches=%s' % num_batches, realdata_options])
+            
             os.chdir(sys.path[0])
     elif benchmark == 'dt-bench':
         print_info('Execute %s' % benchmark)
@@ -214,7 +193,7 @@ if __name__ == "__main__":
         print_info('Execute %s' % benchmark)
         subprocess.call('python p-bench/imagenet/main.py -a %s --lr 0.01 %s' % (program, data_dir), shell=True)
     elif benchmark == 'ct-bench':
-        print('Execute %s' % benchmark)
+        print(('Execute %s' % benchmark))
         subprocess.call(['mkdir', '-p', logdir])
         if program_args is not None:
             os.chdir('t-bench/scripts/tf_cnn_benchmarks')
