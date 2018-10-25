@@ -28,13 +28,15 @@ if __name__ == "__main__":
     variable_update = 'parameter_server'
     local_parameter_device = 'cpu'
     all_reduce_spec=None
-    scout_home = os.getcwd()
     benchmark = []
     program = []
     program_args = []
     metric = []
     sofa_profile = []
     timeout = 200
+
+    scout_home = os.path.dirname(sys.argv[0]) + "/"        
+    print_info('SCOUT_HOME = %s' % scout_home)
 
     parser = argparse.ArgumentParser(description='Scout')
     parser.add_argument(
@@ -120,8 +122,6 @@ if __name__ == "__main__":
     if metric == "sofa_standard":
         sofa_profile = ['sofa', 'stat']
 
-    print_info("SCOUT_HOME = %s" % scout_home)
-
     if benchmark == 'f-bench':
         print('Execute %s' % benchmark)
         subprocess.call(['mkdir', '-p', logdir])
@@ -133,7 +133,7 @@ if __name__ == "__main__":
         print('Execute %s' % benchmark)
         subprocess.call(['mkdir', '-p', logdir])
         if program_args is not None:
-            os.chdir('t-bench/scripts/tf_cnn_benchmarks')
+            os.chdir(scout_home + 't-bench/scripts/tf_cnn_benchmarks')
             if program == "alexnet":
                 subprocess.call(
                     sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
