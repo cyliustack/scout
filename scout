@@ -172,6 +172,7 @@ if __name__ == "__main__":
             
             os.chdir(sys.path[0])
     elif benchmark == 'dt-bench':
+        os.chdir(scout_home + 't-bench/scripts/tf_cnn_benchmarks')
         print_info('Execute %s' % benchmark)
         if program.find(':') != -1:
             variable_update = program.split(':')[0]
@@ -190,13 +191,14 @@ if __name__ == "__main__":
         else:
             print_error('format of <PROGRAM> should be like "parameter_server:alexnet"')
     elif benchmark == 'p-bench':
+        os.chdir(scout_home + 'p-bench/imagenet')
         print_info('Execute %s' % benchmark)
-        subprocess.call('python p-bench/imagenet/main.py -a %s --lr 0.01 %s' % (program, data_dir), shell=True)
+        subprocess.call('python main.py -a %s --lr 0.01 %s' % (program, data_dir), shell=True)
     elif benchmark == 'ct-bench':
+        os.chdir(scout_home + 't-bench/scripts/tf_cnn_benchmarks')
         print(('Execute %s' % benchmark))
         subprocess.call(['mkdir', '-p', logdir])
         if program_args is not None:
-            os.chdir('t-bench/scripts/tf_cnn_benchmarks')
             command_list = ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
                 program, '--batch_size=%d'%batch_size, '--num_gpus=%d' %
                 num_gpus, '--variable_update=%s' % variable_update, '--local_parameter_device=%s' % args.local_parameter_device, '--num_batches=%s' %
