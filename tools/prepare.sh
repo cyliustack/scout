@@ -26,7 +26,7 @@ if [[ ! -f ${OPENMPI_TARBALL} ]]; then
 fi
 if [[ ! -f /opt/${OPENMPI}/bin/mpicc ]]; then
     tar xvf ${OPENMPI_TARBALL}
-    cd ${OPENMPI} && ./configure --prefix=/opt/${OPENMPI} && make -j4 && ${WITH_SUDO} make install && cd - 
+    cd ${OPENMPI} && ./configure --prefix=/opt/${OPENMPI} && make -j && ${WITH_SUDO} make install && cd - 
     rm ${OPENMPI_TARBALL}
 fi
 export PATH=$PATH:/opt/${OPENMPI}/bin 
