@@ -18,7 +18,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Bazel Build')
     parser.add_argument(
         'command', type=str, nargs=1, metavar='<COMMAND>', help='specify a command, like build, compile, install or clean')
+    parser.add_argument('--version', type=str, required=False, metavar='N.N.N',
+                help='version: e.g. 0.20.0')
     args = parser.parse_args()
+
+    if args.version is not None:       
+        bazel_version = args.version
 
     print('command: ',args.command)
     command = args.command[0]
