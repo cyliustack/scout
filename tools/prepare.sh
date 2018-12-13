@@ -19,20 +19,20 @@ fi
 #make -j
 #sudo make install
 
-OPENMPI=openmpi-3.1.3
-OPENMPI_TARBALL=openmpi-3.1.3.tar.bz2
-if [[ ! -f ${OPENMPI_TARBALL} ]]; then  
-   wget https://download.open-mpi.org/release/open-mpi/v3.1/${OPENMPI_TARBALL}
-fi
-if [[ ! -f /opt/${OPENMPI}/bin/mpicc ]]; then
-    tar xvf ${OPENMPI_TARBALL}
-    cd ${OPENMPI} && ./configure --prefix=/opt/${OPENMPI} && make -j && ${WITH_SUDO} make install && cd - 
-    rm ${OPENMPI_TARBALL}
-fi
-export PATH=$PATH:/opt/${OPENMPI}/bin 
-
 pip install --user numpy scipy scikit-learn six pylint xlsxwriter pssh h5py keras 
-pip install --user horovod
+
+#OPENMPI=openmpi-3.1.3
+#OPENMPI_TARBALL=openmpi-3.1.3.tar.bz2
+#if [[ ! -f ${OPENMPI_TARBALL} ]]; then  
+#   wget https://download.open-mpi.org/release/open-mpi/v3.1/${OPENMPI_TARBALL}
+#fi
+#if [[ ! -f /opt/${OPENMPI}/bin/mpicc ]]; then
+#    tar xvf ${OPENMPI_TARBALL}
+#    cd ${OPENMPI} && ./configure --prefix=/opt/${OPENMPI} && make -j && ${WITH_SUDO} make install && cd - 
+#    rm ${OPENMPI_TARBALL}
+#fi
+#export PATH=$PATH:/opt/${OPENMPI}/bin 
+#pip install --user horovod
 
 # Reqirements for using j-bench
 #wget "https://drive.google.com/uc?id=0Byvt-AfX75o1STUxZTFpMU10djA&export=download"
