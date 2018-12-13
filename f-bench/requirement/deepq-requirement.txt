@@ -23,5 +23,5 @@ scipy==1.0.0
 six==1.11.0
 Theano==0.9.0
 tqdm==4.19.4
-urllib3==1.22
+urllib3 ~> 1.23
 tensorflow-gpu==0.12.0
