@@ -19,5 +19,15 @@ if [[ "$1" == "" ]]; then
 fi
 
 strategy=$1
-rm -rf mymodel
-python ${strategy}.py mymodel
+
+if [[ "${strategy}" == "ho" ]]; then
+    horovodrun -np 2 -H localhost:2 python horovod_keras_imagenet_resnet50.py --train-dir  ~/imagenet/train/ --val-dir ~/imagenet/val/
+    exit 0
+elif [ "${strategy}" == "kr" ]; then
+    echo "Pure Keras distributed training."
+else
+    rm -rf mymodel
+    python ${strategy}.py mymodel
+fi
+
+

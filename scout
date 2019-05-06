@@ -57,7 +57,7 @@ if __name__ == "__main__":
                         help='timeout in seconds')
     parser.add_argument(
         'benchmark', type=str, nargs=1, metavar='<BENCHMARK_SUITE>',
-            help='specify a benchmark to run: e.g. f-bench, j-bench, t-bench')
+            help='specify a benchmark to run: e.g. t-bench, dt-bench, s-bench, p-bench')
     # parser.add_argument('sofa-benchmark', nargs=1,
     # metavar='[record|report|preprocess|analyze|visualize]')
     parser.add_argument('program', type=str, nargs=1, metavar='<PROGRAM>')
@@ -145,7 +145,7 @@ if __name__ == "__main__":
         print(('Execute %s' % benchmark))
         subprocess.call(['mkdir', '-p', logdir])
         if program_args is not None:
-            os.chdir(scout_home + 't-bench/scripts/tf_cnn_benchmarks')
+            os.chdir(scout_home + 'benchmarks/scripts/tf_cnn_benchmarks')
             if program == "alexnet":
                 subprocess.call(
                     sofa_profile + ['python', 'tf_cnn_benchmarks.py', '--model=%s' %
@@ -172,7 +172,7 @@ if __name__ == "__main__":
             
             os.chdir(sys.path[0])
     elif benchmark == 'dt-bench':
-        os.chdir(scout_home + 't-bench/scripts/tf_cnn_benchmarks')
+        os.chdir(scout_home + 'benchmarks/scripts/tf_cnn_benchmarks')
         print_info('Execute %s' % benchmark)
         if program.find(':') != -1:
             variable_update = program.split(':')[0]
@@ -191,11 +191,11 @@ if __name__ == "__main__":
         else:
             print_error('format of <PROGRAM> should be like "parameter_server:alexnet"')
     elif benchmark == 'p-bench':
-        os.chdir(scout_home + 'p-bench/imagenet')
+        os.chdir(scout_home + 'pytorch_examples/imagenet')
         print_info('Execute %s' % benchmark)
         subprocess.call('python main.py -a %s --lr 0.01 %s' % (program, data_dir), shell=True)
     elif benchmark == 'ct-bench':
-        os.chdir(scout_home + 't-bench/scripts/tf_cnn_benchmarks')
+        os.chdir(scout_home + 'benchmarks/scripts/tf_cnn_benchmarks')
         print(('Execute %s' % benchmark))
         subprocess.call(['mkdir', '-p', logdir])
         if program_args is not None:

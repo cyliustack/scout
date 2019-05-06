@@ -1,1 +1,4 @@
 *.pyc
+checkpoint-*
+benchmarks
+pytorch_examples

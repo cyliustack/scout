@@ -36,8 +36,8 @@ pip install --user numpy scipy scikit-learn six pylint xlsxwriter pssh h5py kera
 
 # Reqirements for using j-bench
 #wget "https://drive.google.com/uc?id=0Byvt-AfX75o1STUxZTFpMU10djA&export=download"
-
-git submodule init
-git submodule update
-git submodule foreach git pull origin master
-#cd p-bench && git pull & cd -
+git clone https://github.com/tensorflow/benchmarks
+cd benchmarks && git checkout cnn_tf_v1.13_compatible && cd -
+rm -rf pytorch_examples/.git/ && rm -rf pytorch_examples
+git clone https://github.com/pytorch/examples
+mv examples pytorch_examples
