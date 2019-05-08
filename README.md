@@ -30,14 +30,16 @@ Authors: All contributors.
 
 # Usages: Basic Benchmarking 
 ```
+sudo sysctl -w vm.drop_caches=3 
 ./t-bench --model=resnet50  
 ./t-bench --model=resnet50 --num_gpus=2 --strategy="parameter_server" 
-sudo sysctl -w vm.drop_caches=3 && ./t-bench.py --model=resnet50 --data_dir /tmp/ramdisk/dataset/imagenet 
+./t-bench.py --model=resnet50 --data_dir /tmp/ramdisk/dataset/imagenet 
+./s-bench --model=resnet50 --strategy="parameter_server"
 ./tools/get_latency.py resnet50
 ./dt-bench parameter_server:resnet50
 ./dt-bench distributed_replicated:resnet50 --hierarchical_copy
 ./dt-bench distributed_all_reduce:resnet50 --all_reduce_spec=pscpu#2
-cd s-bench && ./run_strategy.sh mi ; cd - 
+cd dt-bench && ./run_strategy.sh mi ; cd - 
 ```
 
 # Usage: Advanced Platform Profiling 
