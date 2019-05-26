@@ -56,17 +56,34 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', help='batch size per device (e.g. 32,64)', type=int, default=64)
     args = parser.parse_args()
 
+    num_samples = 64*2*10 # bs * gpus * steps
+    height = 224
+    width = 224
+    num_classes = 1000
+ 
+    if args.model is not None:
+        print('Training model: ', args.model)
+        if args.model == 'resnet50':
+            input_name = tf.keras.applications.ResNet50(weights=None).input_names[0]
+            model = tf.keras.applications.ResNet50(weights=None)
+        elif args.model == 'inception_v3':
+            input_name = tf.keras.applications.inception_v3.InceptionV3(weights=None).input_names[0]
+            model = tf.keras.applications.inception_v3.InceptionV3(weights=None)
+        elif args.model == 'vgg16':
+            input_name = tf.keras.applications.vgg16.VGG16(weights=None).input_names[0]
+            model = tf.keras.applications.vgg16.VGG16(weights=None) 
+        elif args.model == 'inception_resnet_v2':
+            input_name = tf.keras.applications.inception_resnet_v2.InceptionResNetV2(weights=None).input_names[0]
+            model = tf.keras.applications.inception_resnet_v2.InceptionResNetV2(weights=None)
+
     subprocess.call('rm -rf %s' % args.ckpt_dir, shell=True)
 
-    input_name = tf.keras.applications.inception_v3.InceptionV3(weights=None).input_names[0]
     filename = glob.glob("/mnt/dataset/imagenet/raw-data/train/n02808440/*.JPEG")
-    keras_inception_v3 = tf.keras.applications.inception_v3.InceptionV3(weights=None)
-    
     # if using distribute.Strategy(), only tensorflow native optimizer is allowed currently.
-    keras_inception_v3.compile(optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),
+    model.compile(optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),
                               loss='categorical_crossentropy',
                               metric='accuracy')
     distribution = tf.contrib.distribute.MirroredStrategy()
     config = tf.estimator.RunConfig(train_distribute=distribution)
-    est_inception_v3 = tf.keras.estimator.model_to_estimator(keras_model=keras_inception_v3, config=config)
+    est_inception_v3 = tf.keras.estimator.model_to_estimator(keras_model=model, config=config)
     est_inception_v3.train(input_fn=lambda: imgs_input_fn(filename, None, False, 25, 64), steps=20) 
