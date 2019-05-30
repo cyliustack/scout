@@ -55,7 +55,7 @@ if __name__ == '__main__':
     parser.add_argument('--task', help='e.g. "worker:0"')
     args = parser.parse_args()
 
-    subprocess.call('rm -r /tmp/tmp*',shell=True) 
+    subprocess.call('rm -rf /tmp/tmp*',shell=True) 
  
     if args.model is not None:
         print('Training model: ', args.model)
