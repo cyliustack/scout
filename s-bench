@@ -94,7 +94,7 @@ if __name__ == '__main__':
     elif args.strategy == 'parameter_server':
         distribution = tf.contrib.distribute.ParameterServerStrategy()
     elif args.strategy == 'collective':
-        distribution = tf.contrib.distribute.CollectiveAllReduceStrategy(num_gpus_per_worker=1)
+        distribution = tf.contrib.distribute.CollectiveAllReduceStrategy(num_gpus_per_worker=2)
 
     config = tf.estimator.RunConfig( train_distribute = distribution)
     est = tf.keras.estimator.model_to_estimator( keras_model = model,
