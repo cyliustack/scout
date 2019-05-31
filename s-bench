@@ -100,7 +100,7 @@ if __name__ == '__main__':
     est = tf.keras.estimator.model_to_estimator( keras_model = model,
                                                        config = config)
 
-    if args.strategy == 'collective':
+    if args.strategy != 'mirrored':
         tf_config = { "cluster": { "worker": args.worker.split(',') }, "task": {"type": args.task.split(':')[0], "index": args.task.split(':')[1]}}
         if args.ps != None:
             tf_config['cluster']['ps'] = args.ps.split(',')

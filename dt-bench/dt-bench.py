@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 import xlsxwriter
 import random
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     # end of address do not include '/'
     remote_log_file_address = '~/dt-bench-log-r'
     local_log_address = '~/dt-bench-log-l'
-    file_address = '~/scout/t-bench/scripts/tf_cnn_benchmarks/tf_cnn_benchmarks.py'
+    file_address = '~/scout/scripts/tf_cnn_benchmarks/tf_cnn_benchmarks.py'
 
     # if you don't need to use virtualenv, modify to ''
     # virtualenv example = '/home/hong/virtialenv_dir/bin/'
