@@ -30,7 +30,7 @@ if __name__ == "__main__":
         elif args.model == 'InceptionV3':
             model = keras.applications.inception_v3.InceptionV3(include_top=True, weights='imagenet', input_tensor=None, input_shape=None, pooling=None, classes=num_classes)
         elif args.model == 'VGG16':
-            keras.applications.vgg16.VGG16(include_top=True, weights='imagenet', input_tensor=None, input_shape=None, pooling=None, classes=num_classes) 
+            model = keras.applications.vgg16.VGG16(include_top=True, weights='imagenet', input_tensor=None, input_shape=None, pooling=None, classes=num_classes) 
         elif args.model == 'InceptionResNetV2':
             model = keras.applications.inception_resnet_v2.InceptionResNetV2(include_top=True, weights='imagenet', input_tensor=None, input_shape=None, pooling=None, classes=num_classes)
 
@@ -38,7 +38,7 @@ if __name__ == "__main__":
             print('Unrecognized model.')
             sys.exit(-1)
     else:
-        keras.applications.xception.Xception(include_top=True, weights='imagenet', input_tensor=None, input_shape=None, pooling=None, classes=num_classes)
+        model = keras.applications.xception.Xception(include_top=True, weights='imagenet', input_tensor=None, input_shape=None, pooling=None, classes=num_classes)
    
     # Instantiate the base model (or "template" model).
     # We recommend doing this with under a CPU device scope,
