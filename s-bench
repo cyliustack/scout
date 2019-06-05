@@ -8,15 +8,20 @@ import os
 import sys 
 import json
 
-def imgs_input_fn(filenames, labels=None, perform_shuffle=False, repeat_count=2, batch_size=64):
-    def _parse_function(filename, label):
+def imgs_input_fn(filenames, labels=None, perform_shuffle=False, repeat_count=2, batch_size=64, shape, input_name):
+    def _parse_function(filename, labels, shape, input_name):
         image_string = tf.read_file(filename)
         image = tf.image.decode_image(image_string, channels=3)
         image.set_shape([None, None, None])
-        image = tf.image.resize_images(image, [224, 224])
-        image.set_shape([224, 224, 3])
+        shape = list(shape)
+        shape.pop(0)
+        img_shape = shape
+        shape.pop(-1) 
+        img_size =  shape
+        image = tf.image.resize_images(image, img_size)
+        image.set_shape(img_shape)
         image = tf.reverse(image, axis=[2]) # 'RGB'->'BGR'
-        d = dict(zip(["input_2"], [image])), label
+        d = dict(zip(input_name, [image])), labels
         return d 
     if labels is None:
         labels = [0]*len(filenames)
@@ -60,26 +65,33 @@ if __name__ == '__main__':
     if args.model is not None:
         print('Training model: ', args.model)
         if args.model == 'resnet50':
-            input_name = tf.keras.applications.ResNet50(weights=None).input_names[0]
             model = tf.keras.applications.ResNet50(weights=None)
+            input_name = model.input_names[0]
+            shape = model.layers[0].output_shape
         elif args.model == 'inception_v3':
-            input_name = tf.keras.applications.inception_v3.InceptionV3(weights=None).input_names[0]
             model = tf.keras.applications.inception_v3.InceptionV3(weights=None)
+            input_name = model.input_names[0]
+            shape = model.layers[0].output_shape
         elif args.model == 'vgg16':
-            input_name = tf.keras.applications.vgg16.VGG16(weights=None).input_names[0]
-            model = tf.keras.applications.vgg16.VGG16(weights=None) 
+            model = tf.keras.applications.vgg16.VGG16(weights=None)
+            input_name = model.input_names[0]
+            shape = model.layers[0].output_shape
         elif args.model == 'inception_resnet_v2':
-            input_name = tf.keras.applications.inception_resnet_v2.InceptionResNetV2(weights=None).input_names[0]
             model = tf.keras.applications.inception_resnet_v2.InceptionResNetV2(weights=None)
+            input_name = model.input_names[0]
+            shape = model.layers[0].output_shape
         elif args.model == 'mobilenet_v2':
-            input_name = tf.keras.applications.mobilenet_v2.MobileNetV2(weights=None).input_names[0]
             model = tf.keras.applications.mobilenet_v2.MobileNetV2(weights=None)
+            input_name = model.input_names[0]
+            shape = model.layers[0].output_shape
         elif args.model == 'densenet':
-            input_name = tf.keras.applications.densenet.DenseNet201(weights=None).input_names[0]
             model = tf.keras.applications.densenet.DenseNet201(weights=None)
+            input_name = model.input_names[0]
+            shape = model.layers[0].output_shape
         elif args.model == 'nasnet':
-            input_name = tf.keras.applications.nasnet.NASNetLarge(weights=None).input_names[0]
             model = tf.keras.applications.nasnet.NASNetLarge(weights=None)
+            input_name = model.input_names[0]
+            shape = model.layers[0].output_shape
 
     subprocess.call('rm -rf %s' % args.ckpt_dir, shell=True)
 
@@ -106,11 +118,11 @@ if __name__ == '__main__':
             tf_config['cluster']['ps'] = args.ps.split(',')
         print(json.dumps(tf_config))
         os.environ['TF_CONFIG'] = json.dumps(tf_config)
-        train_spec = tf.estimator.TrainSpec(input_fn=lambda: imgs_input_fn(filename, None, False, 1, args.batch_size), max_steps = args.num_batches)
-        eval_spec = tf.estimator.EvalSpec(input_fn=lambda: imgs_input_fn(filename, None, False, 1, batch_size = 1), steps = 1)
+        train_spec = tf.estimator.TrainSpec(input_fn=lambda: imgs_input_fn(filename, None, False, 1, args.batch_size, shape, input_name), max_steps = args.num_batches)
+        eval_spec = tf.estimator.EvalSpec(input_fn=lambda: imgs_input_fn(filename, None, False, 1, batch_size = 1, shape, input_name), steps = 1)
         tf.estimator.train_and_evaluate(est, train_spec, eval_spec)
     else:
-        est.train( input_fn = lambda: imgs_input_fn(filename, None, False, 1, args.batch_size), steps = args.num_batches)
+        est.train( input_fn = lambda: imgs_input_fn(filename, None, False, 1, args.batch_size, shape, input_name), steps = args.num_batches)
 
     print('S-Bench is done.')
 
