@@ -7,6 +7,31 @@ import argparse
 import os 
 import sys 
 import json
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense,Flatten,Dropout
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import MaxPooling2D
+
+def build_alexnet():
+    print('Manually building AlexNet...')
+    model = Sequential()
+    model.add(Conv2D(96,(11,11),strides=(4,4),input_shape=(227,227,3),padding='valid',activation='relu',kernel_initializer='uniform'))
+    model.add(MaxPooling2D(pool_size=(3,3),strides=(2,2)))
+    model.add(Conv2D(256,(5,5),strides=(1,1),padding='same',activation='relu',kernel_initializer='uniform'))
+    model.add(MaxPooling2D(pool_size=(3,3),strides=(2,2)))
+    model.add(Conv2D(384,(3,3),strides=(1,1),padding='same',activation='relu',kernel_initializer='uniform'))
+    model.add(Conv2D(384,(3,3),strides=(1,1),padding='same',activation='relu',kernel_initializer='uniform'))
+    model.add(Conv2D(256,(3,3),strides=(1,1),padding='same',activation='relu',kernel_initializer='uniform'))
+    model.add(MaxPooling2D(pool_size=(3,3),strides=(2,2)))
+    model.add(Flatten())
+    model.add(Dense(4096,activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(4096,activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(1000,activation='softmax'))
+    model.compile(loss='categorical_crossentropy',optimizer='sgd',metrics=['accuracy'])
+    print('Model buidling is done.')
+    return model
 
 def imgs_input_fn(filenames, labels=None, perform_shuffle=False, repeat_count=2, batch_size=64):
     def _parse_function(filename, label):
@@ -53,6 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('--worker', help='e.g. "host1:2222,host2:2222"')
     parser.add_argument('--ps', help='e.g. "host1:2220,host2:2220"')
     parser.add_argument('--task', help='e.g. "worker:0"')
+    parser.add_argument('--summary-only', action='store_true')
     args = parser.parse_args()
 
     subprocess.call('rm -r /tmp/tmp*',shell=True) 
@@ -62,6 +88,9 @@ if __name__ == '__main__':
         if args.model == 'resnet50':
             input_name = tf.keras.applications.ResNet50(weights=None).input_names[0]
             model = tf.keras.applications.ResNet50(weights=None)
+        elif args.model == 'alexnet':
+            input_name = build_alexnet().input_names[0]
+            model = build_alexnet() 
         elif args.model == 'inception_v3':
             input_name = tf.keras.applications.inception_v3.InceptionV3(weights=None).input_names[0]
             model = tf.keras.applications.inception_v3.InceptionV3(weights=None)
@@ -80,6 +109,10 @@ if __name__ == '__main__':
         elif args.model == 'nasnet':
             input_name = tf.keras.applications.nasnet.NASNetLarge(weights=None).input_names[0]
             model = tf.keras.applications.nasnet.NASNetLarge(weights=None)
+
+    if args.summary_only:
+        print(model.summary())
+        sys.exit(0)
 
     subprocess.call('rm -rf %s' % args.ckpt_dir, shell=True)
 
