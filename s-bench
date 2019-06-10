@@ -81,7 +81,7 @@ if __name__ == '__main__':
     parser.add_argument('--summary-only', action='store_true')
     args = parser.parse_args()
 
-    subprocess.call('rm -r /tmp/tmp*',shell=True) 
+    subprocess.call('rm -rf /tmp/tmp*',shell=True) 
  
     if args.model is not None:
         print('Training model: ', args.model)
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     est = tf.keras.estimator.model_to_estimator( keras_model = model,
                                                        config = config)
 
-    if args.strategy == 'collective':
+    if args.strategy != 'mirrored':
         tf_config = { "cluster": { "worker": args.worker.split(',') }, "task": {"type": args.task.split(':')[0], "index": args.task.split(':')[1]}}
         if args.ps != None:
             tf_config['cluster']['ps'] = args.ps.split(',')

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 import xlsxwriter
 import random
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     # end of address do not include '/'
     remote_log_file_address = '~/dt-bench-log-r'
     local_log_address = '~/dt-bench-log-l'
-    file_address = '~/scout/t-bench/scripts/tf_cnn_benchmarks/tf_cnn_benchmarks.py'
+    file_address = '~/scout/scripts/tf_cnn_benchmarks/tf_cnn_benchmarks.py'
 
     # if you don't need to use virtualenv, modify to ''
     # virtualenv example = '/home/hong/virtialenv_dir/bin/'
@@ -215,7 +215,7 @@ if __name__ == "__main__":
                         ps_profile_begin = ''
                         ps_profile_end = ''
                         cmd_list[i] = 'ssh ' + ps[i] + ' \'' + virtualenv + ' export CUDA_VISIBLE_DEVICES=-1; ' + ps_profile_begin + \
-                                  'python ' + str(file_address) + \
+                                  'python3 ' + str(file_address) + \
                                   ' --model=' + str(model) + \
                                   ' --data_name=imagenet' + \
                                   ' --data_dir=' + data_dir + \
@@ -262,7 +262,7 @@ if __name__ == "__main__":
                         profile_begin = ''
                         profile_end = ''
                         cmd_list[len(ps) + i] = 'ssh ' + workers[i] + ' \'' + virtualenv + worker_device_scope + timeout_cmd  + \
-                        'python ' + str(file_address) + \
+                        'python3 ' + str(file_address) + \
                         ' --model=' + str(model) + \
                         ' --data_name=imagenet' + \
                         ' --data_dir=' + data_dir + \
@@ -295,7 +295,7 @@ if __name__ == "__main__":
                         profile_begin = ''
                         profile_end = ''
                         cmd_list[len(ps) + len(workers) + i ] = 'ssh ' + controllers[i] + ' \'' + virtualenv + ' export CUDA_VISIBLE_DEVICES=-1; ' +  timeout_cmd  + \
-                        'python ' + str(file_address) + \
+                        'python3 ' + str(file_address) + \
                         ' --model=' + str(model) + \
                         ' --data_name=imagenet' + \
                         ' --data_dir=' + data_dir + \
