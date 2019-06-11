@@ -126,6 +126,7 @@ if __name__ == '__main__':
         distribution = tf.contrib.distribute.MirroredStrategy()
     elif args.strategy == 'parameter_server':
         distribution = tf.contrib.distribute.ParameterServerStrategy()
+        os.environ['CUDA_VISIBLE_DEVICES'] = '' 
     elif args.strategy == 'collective':
         distribution = tf.contrib.distribute.CollectiveAllReduceStrategy(num_gpus_per_worker=2)
 
