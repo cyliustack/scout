@@ -99,32 +99,21 @@ if __name__ == '__main__':
         elif args.model == 'inception_v3':
             #input_name = tf.keras.applications.inception_v3.InceptionV3(weights=None).input_names[0]
             model = tf.keras.applications.inception_v3.InceptionV3(weights=None)
-            input_name = model.input_names[0]
-            shape = model.layers[0].output_shape
         elif args.model == 'vgg16':
             #input_name = tf.keras.applications.vgg16.VGG16(weights=None).input_names[0]
             model = tf.keras.applications.vgg16.VGG16(weights=None) 
         elif args.model == 'inception_resnet_v2':
             #input_name = tf.keras.applications.inception_resnet_v2.InceptionResNetV2(weights=None).input_names[0]
             model = tf.keras.applications.inception_resnet_v2.InceptionResNetV2(weights=None)
-            input_name = model.input_names[0]
-            shape = model.layers[0].output_shape
         elif args.model == 'mobilenet_v2':
             #input_name = tf.keras.applications.mobilenet_v2.MobileNetV2(weights=None).input_names[0]
             model = tf.keras.applications.mobilenet_v2.MobileNetV2(weights=None)
-            input_name = model.input_names[0]
-            shape = model.layers[0].output_shape
         elif args.model == 'densenet':
             #input_name = tf.keras.applications.densenet.DenseNet201(weights=None).input_names[0]
             model = tf.keras.applications.densenet.DenseNet201(weights=None)
-            input_name = model.input_names[0]
-            shape = model.layers[0].output_shape
         elif args.model == 'nasnet':
             #input_name = tf.keras.applications.nasnet.NASNetLarge(weights=None).input_names[0]
             model = tf.keras.applications.nasnet.NASNetLarge(weights=None)
-            input_name = model.input_names[0]
-            shape = model.layers[0].output_shape
-
     if args.summary_only:
         print(model.summary())
         sys.exit(0)
