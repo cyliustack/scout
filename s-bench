@@ -38,10 +38,15 @@ def imgs_input_fn(filenames, labels=None, perform_shuffle=False, repeat_count=2,
         image_string = tf.read_file(filename)
         image = tf.image.decode_image(image_string, channels=3)
         image.set_shape([None, None, None])
-        image = tf.image.resize_images(image, [224, 224])
-        image.set_shape([224, 224, 3])
+        global img_size
+        global img_shape
+        img_size = list(img_size)
+        img_shape = list(img_shape)
+        global input_name
+        image = tf.image.resize_images(image, img_size)
+        image.set_shape(img_shape)
         image = tf.reverse(image, axis=[2]) # 'RGB'->'BGR'
-        d = dict(zip(["input_2"], [image])), label
+        d = dict(zip([input_name], [image])), label
         return d 
     if labels is None:
         labels = [0]*len(filenames)
@@ -86,35 +91,45 @@ if __name__ == '__main__':
     if args.model is not None:
         print('Training model: ', args.model)
         if args.model == 'resnet50':
-            input_name = tf.keras.applications.ResNet50(weights=None).input_names[0]
+            #input_name = tf.keras.applications.ResNet50(weights=None).input_names[0]
             model = tf.keras.applications.ResNet50(weights=None)
         elif args.model == 'alexnet':
-            input_name = build_alexnet().input_names[0]
+            #input_name = build_alexnet().input_names[0]
             model = build_alexnet() 
         elif args.model == 'inception_v3':
-            input_name = tf.keras.applications.inception_v3.InceptionV3(weights=None).input_names[0]
+            #input_name = tf.keras.applications.inception_v3.InceptionV3(weights=None).input_names[0]
             model = tf.keras.applications.inception_v3.InceptionV3(weights=None)
         elif args.model == 'vgg16':
-            input_name = tf.keras.applications.vgg16.VGG16(weights=None).input_names[0]
+            #input_name = tf.keras.applications.vgg16.VGG16(weights=None).input_names[0]
             model = tf.keras.applications.vgg16.VGG16(weights=None) 
         elif args.model == 'inception_resnet_v2':
-            input_name = tf.keras.applications.inception_resnet_v2.InceptionResNetV2(weights=None).input_names[0]
+            #input_name = tf.keras.applications.inception_resnet_v2.InceptionResNetV2(weights=None).input_names[0]
             model = tf.keras.applications.inception_resnet_v2.InceptionResNetV2(weights=None)
         elif args.model == 'mobilenet_v2':
-            input_name = tf.keras.applications.mobilenet_v2.MobileNetV2(weights=None).input_names[0]
+            #input_name = tf.keras.applications.mobilenet_v2.MobileNetV2(weights=None).input_names[0]
             model = tf.keras.applications.mobilenet_v2.MobileNetV2(weights=None)
         elif args.model == 'densenet':
-            input_name = tf.keras.applications.densenet.DenseNet201(weights=None).input_names[0]
+            #input_name = tf.keras.applications.densenet.DenseNet201(weights=None).input_names[0]
             model = tf.keras.applications.densenet.DenseNet201(weights=None)
         elif args.model == 'nasnet':
-            input_name = tf.keras.applications.nasnet.NASNetLarge(weights=None).input_names[0]
+            #input_name = tf.keras.applications.nasnet.NASNetLarge(weights=None).input_names[0]
             model = tf.keras.applications.nasnet.NASNetLarge(weights=None)
 
     if args.summary_only:
         print(model.summary())
         sys.exit(0)
-
+  
     subprocess.call('rm -rf %s' % args.ckpt_dir, shell=True)
+
+    global input_name
+    global img_shape
+    global img_size
+    input_name = model.input_names[0]
+    shape = list(model.layers[0].output_shape)
+    shape.pop(0)
+    img_shape = tuple(shape)
+    shape.pop(-1)
+    img_size = tuple(shape)
 
     filename = glob.glob(args.raw_data_dir+"*.JPEG")
     # if using distribute.Strategy(), only tensorflow native optimizer is allowed currently.
