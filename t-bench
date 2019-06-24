@@ -28,7 +28,7 @@ if __name__ == '__main__':
     os.chdir(sys.path[0] + '/benchmarks/scripts/tf_cnn_benchmarks/')
     subprocess.call('rm -rf %s' % args.ckpt_dir, shell=True)
     subprocess.call('python tf_cnn_benchmarks.py --data_format=NCHW --batch_size=%d \
-    --model=%s --optimizer=momentum --variable_update=%s \
+    --model=%s --optimizer=sgd --local_parameter_device=cpu --variable_update=%s \
     --nodistortions --gradient_repacking=8 --num_gpus=%d \
-    --num_batches=%d --weight_decay=1e-4 --data_name=imagenet %s \
+    --num_batches=%d --num_warmup_batches=10 --weight_decay=1e-4 --data_name=imagenet %s \
     --train_dir=%s ' % (args.batch_size, args.model, args.strategy, args.num_gpus, args.num_batches, flag_data_dir, args.ckpt_dir), shell=True)

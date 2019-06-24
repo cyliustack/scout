@@ -33,7 +33,7 @@ def build_alexnet():
     print('Model buidling is done.')
     return model
 
-def imgs_input_fn(filenames, labels=None, perform_shuffle=False, repeat_count=2, batch_size=64):
+def imgs_input_fn(filenames, labels=None, batch_size=64):
     def _parse_function(filename, label):
         image_string = tf.read_file(filename)
         image = tf.image.decode_image(image_string, channels=3)
@@ -58,10 +58,8 @@ def imgs_input_fn(filenames, labels=None, perform_shuffle=False, repeat_count=2,
     labels = tf.cast(labels, tf.float32)
     dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
     dataset = dataset.map(_parse_function)
-    if perform_shuffle:
-        # Randomizes input using a window of 256 elements (read into memory)
-        dataset = dataset.shuffle(buffer_size=256)
-    dataset = dataset.repeat(repeat_count)  # Repeats dataset this # times
+    dataset = dataset.shuffle(buffer_size=256)
+    dataset = dataset.repeat(1)  # Repeats dataset this # times
     dataset = dataset.batch(batch_size)  # Batch size to use
     iterator = dataset.make_one_shot_iterator()
     batch_features, batch_labels = iterator.get_next()
@@ -130,7 +128,7 @@ if __name__ == '__main__':
     shape.pop(-1)
     img_size = tuple(shape)
 
-    filename = glob.glob(args.raw_data_dir+"*.JPEG")
+    filenames = glob.glob(args.raw_data_dir+"*.JPEG")
     # if using distribute.Strategy(), only tensorflow native optimizer is allowed currently.
     model.compile(optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),
                               loss='categorical_crossentropy',
@@ -154,11 +152,13 @@ if __name__ == '__main__':
             tf_config['cluster']['ps'] = args.ps.split(',')
         print(json.dumps(tf_config))
         os.environ['TF_CONFIG'] = json.dumps(tf_config)
-        train_spec = tf.estimator.TrainSpec(input_fn=lambda: imgs_input_fn(filename, None, False, 1, args.batch_size), max_steps = args.num_batches)
-        eval_spec = tf.estimator.EvalSpec(input_fn=lambda: imgs_input_fn(filename, None, False, 1, batch_size = 1), steps = 1)
+        train_spec = tf.estimator.TrainSpec(input_fn=lambda: imgs_input_fn(filenames, None, False, 1, args.batch_size), max_steps = args.num_batches)
+        eval_spec = tf.estimator.EvalSpec(input_fn=lambda: imgs_input_fn(filenames, None, False, 1, batch_size = 1), steps = 1)
         tf.estimator.train_and_evaluate(est, train_spec, eval_spec)
     else:
-        est.train( input_fn = lambda: imgs_input_fn(filename, None, False, 1, args.batch_size), steps = args.num_batches)
+        # Create a callalble object: fn_image_preprocess
+        fn_image_preprocess = lambda : imgs_input_fn(filenames, None, args.batch_size)
+        est.train( input_fn = fn_image_preprocess , steps = args.num_batches)
 
     print('S-Bench is done.')
 
