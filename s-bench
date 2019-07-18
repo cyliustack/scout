@@ -136,23 +136,24 @@ if __name__ == '__main__':
     elif args.strategy == 'collective':
         distribution = tf.contrib.distribute.CollectiveAllReduceStrategy(num_gpus_per_worker=2)
 
-    config = tf.estimator.RunConfig( train_distribute = distribution)
-    est = tf.keras.estimator.model_to_estimator( keras_model = model,
-                                                       config = config)
+    with tf.contrib.tfprof.ProfileContext('train_dir', dump_steps=[], trace_steps=[]) as pctx:
+        config = tf.estimator.RunConfig( train_distribute = distribution)
+        est = tf.keras.estimator.model_to_estimator( keras_model = model,
+                                                           config = config)
 
-    if args.strategy != 'mirrored':
-        tf_config = { "cluster": { "worker": args.worker.split(',') }, "task": {"type": args.task.split(':')[0], "index": args.task.split(':')[1]}}
-        if args.ps != None:
-            tf_config['cluster']['ps'] = args.ps.split(',')
-        print(json.dumps(tf_config))
-        os.environ['TF_CONFIG'] = json.dumps(tf_config)
-        train_spec = tf.estimator.TrainSpec(input_fn=lambda: imgs_input_fn(filenames, None, False, 1, args.batch_size), max_steps = args.num_batches)
-        eval_spec = tf.estimator.EvalSpec(input_fn=lambda: imgs_input_fn(filenames, None, False, 1, batch_size = 1), steps = 1)
-        tf.estimator.train_and_evaluate(est, train_spec, eval_spec)
-    else:
-        # Create a callalble object: fn_image_preprocess
-        fn_image_preprocess = lambda : imgs_input_fn(filenames, None, args.batch_size)
-        est.train( input_fn = fn_image_preprocess , steps = args.num_batches)
+        if args.strategy != 'mirrored':
+            tf_config = { "cluster": { "worker": args.worker.split(',') }, "task": {"type": args.task.split(':')[0], "index": args.task.split(':')[1]}}
+            if args.ps != None:
+                tf_config['cluster']['ps'] = args.ps.split(',')
+            print(json.dumps(tf_config))
+            os.environ['TF_CONFIG'] = json.dumps(tf_config)
+            train_spec = tf.estimator.TrainSpec(input_fn=lambda: imgs_input_fn(filenames, None, False, 1, args.batch_size), max_steps = args.num_batches)
+            eval_spec = tf.estimator.EvalSpec(input_fn=lambda: imgs_input_fn(filenames, None, False, 1, batch_size = 1), steps = 1)
+            tf.estimator.train_and_evaluate(est, train_spec, eval_spec)
+        else:
+            # Create a callalble object: fn_image_preprocess
+            fn_image_preprocess = lambda : imgs_input_fn(filenames, None, args.batch_size)
+            est.train( input_fn = fn_image_preprocess , steps = args.num_batches)
 
     print('S-Bench is done.')
 
