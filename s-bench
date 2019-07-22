@@ -122,6 +122,11 @@ if __name__ == '__main__':
     shape.pop(-1)
     img_size = tuple(shape)
 
+    if args.model == 'alexnet':
+        img_shape = tuple([227, 227, 3])
+        img_size = tuple([227, 227])
+    
+
     filenames = glob.glob(args.raw_data_dir+"*.JPEG")
     # if using distribute.Strategy(), only tensorflow native optimizer is allowed currently.
     model.compile(optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),
