@@ -22,27 +22,22 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='SOFA')
 
     parser.add_argument(
-        'model',
-        type=str,
-        nargs='?',
-        metavar='<MODEL>')
-    parser.add_argument('--batch_size', metavar='N', type=int, required=False, help='the batch size with which thte latency measurement will be conducted')
+        '--model',
+        default='resnet50')
+    parser.add_argument('--batch_size', metavar='N', type=int, help='batch size', default=1)
 
     args = parser.parse_args()
 
     if args.model is not None:
         model = args.model
-    if args.batch_size is not None:
-        batch_size = args.batch_size
-
 
     subprocess.call('rm time_report.txt',shell=True)
     num_batches = 100
     diff_steps =  100
     commands = []
     execution_times = []
-    commands.append('./scout ct-bench '+ model + ' --num_batches=' + str(num_batches) + ' --batch_size=' + str(batch_size))
-    commands.append('./scout ct-bench '+ model + ' --num_batches=' + str(num_batches+diff_steps) + ' --batch_size=' + str(batch_size))
+    commands.append('python benchmarks/scripts/tf_cnn_benchmarks/tf_cnn_benchmarks.py --forward_only --model=%s --batch_size=%d --num_batches=100 --variable_update=independent' % (args.model, args.batch_size) )
+    commands.append('python benchmarks/scripts/tf_cnn_benchmarks/tf_cnn_benchmarks.py --forward_only --model=%s --batch_size=%d --num_batches=200 --variable_update=independent' % (args.model, args.batch_size) )
     for command in commands:
         subprocess.call(
             '/usr/bin/time -v ' +
@@ -62,7 +57,7 @@ if __name__ == "__main__":
                         print('execution_time = %lf' % execution_time)
                         execution_times.append(execution_time)
     print(execution_times)
-    print('Single-step latency = %lf' % ((execution_times[2]-execution_times[1])/diff_steps) )
+    print('Single-step latency = %.6lf' % ((execution_times[2]-execution_times[1])/diff_steps) )
 #  1     Command being timed: "ls"
 #  2     User time (seconds): 0.00
 #  3     System time (seconds): 0.00
