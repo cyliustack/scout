@@ -68,7 +68,7 @@ def imgs_input_fn(filenames, labels=None, batch_size=64):
 
 
 if __name__ == '__main__':
-    default_raw_data_dir = '/mnt/dataset/imagenet/raw-data/train/n02808440/'
+    default_raw_data_dir = '../mini-imagenet/raw-data/train/n01440764/'
     default_ckpt_dir = 'mycheckpoint'
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', help='imagenet model name.', default='resnet50')
@@ -83,10 +83,17 @@ if __name__ == '__main__':
     parser.add_argument('--ps', help='e.g. "host1:2220,host2:2220"')
     parser.add_argument('--task', help='e.g. "worker:0"')
     parser.add_argument('--summary-only', action='store_true')
+    parser.add_argument('--clean', action='store_true')
 
     args = parser.parse_args()
 
-    subprocess.call('rm -rf /tmp/tmp*',shell=True)
+    if args.clean:
+        subprocess.call('rm -rf /tmp/tmp*',shell=True)
+        sys.exit(0)
+
+    if not os.path.isdir(args.raw_data_dir):
+        print('Cannot find %s' % args.raw_data_dir)
+        sys.exit(-1)
 
     print("logdir = %s" % args.logdir)
     if os.path.isdir(args.logdir):
@@ -144,29 +151,33 @@ if __name__ == '__main__':
     if args.strategy == 'mirrored':
         distribution = tf.contrib.distribute.MirroredStrategy()
     elif args.strategy == 'parameter_server':
-        distribution = tf.contrib.distribute.ParameterServerStrategy()
-        os.environ['CUDA_VISIBLE_DEVICES'] = '' 
+        distribution = tf.contrib.distribute.ParameterServerStrategy(num_gpus_per_worker=1)
+        if args.task.split(':')[0] == 'ps':
+            os.environ['CUDA_VISIBLE_DEVICES'] = ''
     elif args.strategy == 'collective':
         distribution = tf.contrib.distribute.CollectiveAllReduceStrategy(num_gpus_per_worker=2)
+    elif args.strategy == 'central_storage':
+        distribution = tf.contrib.distribute.OneDeviceStrategy(device='cpu')
 
     with tf.contrib.tfprof.ProfileContext(args.logdir, dump_steps=[1], trace_steps=[]) as pctx:
         config = tf.estimator.RunConfig( train_distribute = distribution)
         est = tf.keras.estimator.model_to_estimator( keras_model = model,
                                                            config = config)
-
-        if args.strategy != 'mirrored':
+        
+        fn_image_preprocess = lambda : imgs_input_fn(filenames, None, args.batch_size)
+        
+        if args.strategy == 'mirrored' or args.strategy == 'central_storage':
+            # Create a callalble object: fn_image_preprocess
+            est.train( input_fn = fn_image_preprocess , steps = args.num_batches)
+        elif args.strategy == 'parameter_server':
             tf_config = { "cluster": { "worker": args.worker.split(',') }, "task": {"type": args.task.split(':')[0], "index": args.task.split(':')[1]}}
             if args.ps != None:
                 tf_config['cluster']['ps'] = args.ps.split(',')
             print(json.dumps(tf_config))
             os.environ['TF_CONFIG'] = json.dumps(tf_config)
-            train_spec = tf.estimator.TrainSpec(input_fn=lambda: imgs_input_fn(filenames, None, False, 1, args.batch_size), max_steps = args.num_batches)
-            eval_spec = tf.estimator.EvalSpec(input_fn=lambda: imgs_input_fn(filenames, None, False, 1, batch_size = 1), steps = 1)
-            tf.estimator.train_and_evaluate(est, train_spec, eval_spec)
-        else:
-            # Create a callalble object: fn_image_preprocess
-            fn_image_preprocess = lambda : imgs_input_fn(filenames, None, args.batch_size)
-            est.train( input_fn = fn_image_preprocess , steps = args.num_batches)
+            train_spec = tf.estimator.TrainSpec(input_fn=fn_image_preprocess, max_steps = args.num_batches)
+            eval_spec = tf.estimator.EvalSpec(input_fn=fn_image_preprocess, steps = 1)
+            tf.estimator.train_and_evaluate(est, train_spec, eval_spec) 
 
     print('S-Bench is done.')
 
