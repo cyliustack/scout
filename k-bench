@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+import numpy as np
+import glob
+import subprocess
+import argparse
+import os 
+import sys 
+from keras.datasets import mnist
+from autokeras.image.image_supervised import ImageClassifier
+
+def imgs_input_fn(filenames, labels=None, batch_size=64):
+    def _parse_function(filename, label):
+        image_string = tf.read_file(filename)
+        image = tf.image.decode_image(image_string, channels=3)
+        image.set_shape([None, None, None])
+        global img_size
+        global img_shape
+        img_size = list(img_size)
+        img_shape = list(img_shape)
+        global input_name
+        image = tf.image.resize_images(image, img_size)
+        image.set_shape(img_shape)
+        image = tf.reverse(image, axis=[2]) # 'RGB'->'BGR'
+        d = dict(zip([input_name], [image])), label
+        return d 
+    if labels is None:
+        labels = [0]*len(filenames)
+    labels=np.array(labels)
+    if len(labels.shape) == 1:
+        labels = np.expand_dims(labels, axis=1)
+    filenames = tf.constant(filenames)
+    labels = tf.constant(labels)
+    labels = tf.cast(labels, tf.float32)
+    dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
+    dataset = dataset.map(_parse_function)
+    dataset = dataset.shuffle(buffer_size=256)
+    dataset = dataset.repeat(1)  # Repeats dataset this # times
+    dataset = dataset.batch(batch_size)  # Batch size to use
+    iterator = dataset.make_one_shot_iterator()
+    batch_features, batch_labels = iterator.get_next()
+    # if using distribute.Strategy(), must use "return dataset" instead of "return batch_features, batch_lables" 
+    return dataset
+
+
+if __name__ == '__main__':
+    print('K-Bench for autokeras.')
+    default_raw_data_dir = '../mini-imagenet/raw-data/train/n01440764/'
+    default_ckpt_dir = 'mycheckpoint'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', help='imagenet model name.', default='resnet50')
+    parser.add_argument('--strategy', help='strategy of variable updating', default='mirrored')
+    parser.add_argument('--num_gpus', help='number of GPUs used', default=1, type=int)
+    parser.add_argument('--raw_data_dir', help='path to directory containing training dataset', default=default_raw_data_dir)
+    parser.add_argument('--logdir', help='path to directory containing logs', default='sbench_log')
+    parser.add_argument('--ckpt_dir', help='path to checkpoint directory', default=default_ckpt_dir)
+    parser.add_argument('--num_batches', help='number of batches (a.k.a. steps or iterations', type=int, default=10)
+    parser.add_argument('--clean', action='store_true')
+
+    args = parser.parse_args()
+
+    if args.clean:
+        subprocess.call('rm -rf /tmp/autokeras*',shell=True)
+        subprocess.call('du -sh /tmp/*',shell=True)
+        sys.exit(0)
+
+    print("logdir = %s" % args.logdir)
+    if os.path.isdir(args.logdir):
+        subprocess.call('rm -rf %s/*' % args.logdir, shell=True) 
+    else:
+        subprocess.call('mkdir -p %s' % args.logdir, shell=True) 
+
+    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    x_train = x_train.reshape(x_train.shape + (1,))
+    x_test = x_test.reshape(x_test.shape + (1,))
+
+    clf = ImageClassifier(verbose=True)
+    clf.fit(x_train, y_train, time_limit=12 * 60 * 60)
+    clf.final_fit(x_train, y_train, x_test, y_test, retrain=True)
+    y = clf.evaluate(x_test, y_test)
+
+    print('K-Bench for autokeras is done.')
+
