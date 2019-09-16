@@ -57,15 +57,15 @@ def build_efficientnet():
 
 def imgs_input_fn(filenames, labels=None, batch_size=64):
     def _parse_function(filename, label):
-        image_string = tf.read_file(filename)
-        image = tf.image.decode_image(image_string, channels=3)
+        image_string = tf.io.read_file(filename)
+        image = tf.io.decode_image(image_string, channels=3)
         image.set_shape([None, None, None])
         global img_size
         global img_shape
         img_size = list(img_size)
         img_shape = list(img_shape)
         global input_name
-        image = tf.image.resize_images(image, img_size)
+        image = tf.image.resize(image, img_size)
         image.set_shape(img_shape)
         image = tf.reverse(image, axis=[2]) # 'RGB'->'BGR'
         d = dict(zip([input_name], [image])), label
@@ -83,8 +83,6 @@ def imgs_input_fn(filenames, labels=None, batch_size=64):
     dataset = dataset.shuffle(buffer_size=256)
     dataset = dataset.repeat(1)  # Repeats dataset this # times
     dataset = dataset.batch(batch_size)  # Batch size to use
-    iterator = dataset.make_one_shot_iterator()
-    batch_features, batch_labels = iterator.get_next()
     # if using distribute.Strategy(), must use "return dataset" instead of "return batch_features, batch_lables" 
     return dataset
 
@@ -181,41 +179,40 @@ if __name__ == '__main__':
  
     filenames = glob.glob(args.raw_data_dir+"*.JPEG")
     
-    with tf.contrib.tfprof.ProfileContext(args.logdir, dump_steps=[1], trace_steps=[]) as pctx:
-        # if using distribute.Strategy(), only tensorflow native optimizer is allowed currently.
-        if args.strategy == 'mirrored':
-            distribution = tf.contrib.distribute.MirroredStrategy()
-        elif args.strategy == 'parameter_server':
-            distribution = tf.contrib.distribute.ParameterServerStrategy(num_gpus_per_worker=1)
-            if args.task.split(':')[0] == 'ps':
-                os.environ['CUDA_VISIBLE_DEVICES'] = ''
-        elif args.strategy == 'collective':
-            distribution = tf.contrib.distribute.CollectiveAllReduceStrategy(num_gpus_per_worker=2)
-        elif args.strategy == 'central_storage':
-            distribution = tf.contrib.distribute.OneDeviceStrategy(device='cpu')
+    # if using distribute.Strategy(), only tensorflow native optimizer is allowed currently.
+    if args.strategy == 'mirrored':
+        distribution = tf.distribute.MirroredStrategy()
+    elif args.strategy == 'parameter_server':
+        distribution = tf.distribute.ParameterServerStrategy(num_gpus_per_worker=1)
+        if args.task.split(':')[0] == 'ps':
+            os.environ['CUDA_VISIBLE_DEVICES'] = ''
+    elif args.strategy == 'collective':
+        distribution = tf.distribute.CollectiveAllReduceStrategy(num_gpus_per_worker=2)
+    elif args.strategy == 'central_storage':
+        distribution = tf.distribute.OneDeviceStrategy(device='cpu')
 
-       
-        model.compile(optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),
-                              loss='categorical_crossentropy',
-                              metric='accuracy')
-        config = tf.estimator.RunConfig( train_distribute = distribution)
-        est = tf.keras.estimator.model_to_estimator( keras_model = model,
-                                                           config = config)
-        
-        fn_image_preprocess = lambda : imgs_input_fn(filenames, None, args.batch_size)
-        
-        if args.strategy == 'mirrored' or args.strategy == 'central_storage':
-            # Create a callalble object: fn_image_preprocess
-            est.train( input_fn = fn_image_preprocess , steps = args.num_batches)
-        elif args.strategy == 'parameter_server':
-            tf_config = { "cluster": { "worker": args.worker.split(',') }, "task": {"type": args.task.split(':')[0], "index": args.task.split(':')[1]}}
-            if args.ps != None:
-                tf_config['cluster']['ps'] = args.ps.split(',')
-            print(json.dumps(tf_config))
-            os.environ['TF_CONFIG'] = json.dumps(tf_config)
-            train_spec = tf.estimator.TrainSpec(input_fn=fn_image_preprocess, max_steps = args.num_batches)
-            eval_spec = tf.estimator.EvalSpec(input_fn=fn_image_preprocess, steps = 1)
-            tf.estimator.train_and_evaluate(est, train_spec, eval_spec) 
+    
+    model.compile(optimizer=tf.keras.optimizers.SGD(lr=0.0001, momentum=0.9),
+                          loss='categorical_crossentropy',
+                          metric='accuracy')
+    config = tf.estimator.RunConfig( train_distribute = distribution)
+    est = tf.keras.estimator.model_to_estimator( keras_model = model,
+                                                       config = config)
+    
+    # Create a callalble object: fn_image_preprocess
+    fn_image_preprocess = lambda : imgs_input_fn(filenames, None, args.batch_size)
+    
+    if args.strategy == 'mirrored' or args.strategy == 'central_storage':
+        est.train( input_fn = fn_image_preprocess , steps = args.num_batches)
+    elif args.strategy == 'parameter_server':
+        tf_config = { "cluster": { "worker": args.worker.split(',') }, "task": {"type": args.task.split(':')[0], "index": args.task.split(':')[1]}}
+        if args.ps != None:
+            tf_config['cluster']['ps'] = args.ps.split(',')
+        print(json.dumps(tf_config))
+        os.environ['TF_CONFIG'] = json.dumps(tf_config)
+        train_spec = tf.estimator.TrainSpec(input_fn=fn_image_preprocess, max_steps = args.num_batches)
+        eval_spec = tf.estimator.EvalSpec(input_fn=fn_image_preprocess, steps = 1)
+        tf.estimator.train_and_evaluate(est, train_spec, eval_spec) 
 
     print('S-Bench is done.')
 
