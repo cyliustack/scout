@@ -11,6 +11,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense,Flatten,Dropout
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import MaxPooling2D
+#from keras_efficientnets import EfficientNetB0
+from efficientnet import EfficientNetB0
 
 def build_alexnet():
     print('Manually building AlexNet...')
@@ -29,8 +31,13 @@ def build_alexnet():
     model.add(Dense(4096,activation='relu'))
     model.add(Dropout(0.5))
     model.add(Dense(1000,activation='softmax'))
-    model.compile(loss='categorical_crossentropy',optimizer='sgd',metrics=['accuracy'])
-    print('Model buidling is done.')
+    print('AlexNet Model buidling is done.')
+    return model
+
+
+def build_efficientnet():
+    model = EfficientNetB0(weights='imagenet')
+    model = EfficientNetB0(classes=1000, include_top=True, weights='imagenet')
     return model
 
 def imgs_input_fn(filenames, labels=None, batch_size=64):
@@ -68,7 +75,7 @@ def imgs_input_fn(filenames, labels=None, batch_size=64):
 
 
 if __name__ == '__main__':
-    default_raw_data_dir = '../mini-imagenet/raw-data/train/n01440764/'
+    default_raw_data_dir = os.environ['HOME']+'/mini-imagenet/raw-data/train/n01440764/'
     default_ckpt_dir = 'mycheckpoint'
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', help='imagenet model name.', default='resnet50')
@@ -89,6 +96,7 @@ if __name__ == '__main__':
 
     if args.clean:
         subprocess.call('rm -rf /tmp/tmp*',shell=True)
+        subprocess.call('du -sh /tmp/*',shell=True)
         sys.exit(0)
 
     if not os.path.isdir(args.raw_data_dir):
@@ -121,6 +129,11 @@ if __name__ == '__main__':
             model = tf.keras.applications.densenet.DenseNet201(weights=None)
         elif args.model == 'nasnet':
             model = tf.keras.applications.nasnet.NASNetLarge(weights=None)
+        # TODO:failed to train with efficientnet.
+        elif args.model == 'efficientnet':
+            model = build_efficientnet() 
+
+
     if args.summary_only:
         print(model.summary())
         sys.exit(0)
