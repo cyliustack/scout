@@ -8,11 +8,26 @@ import os
 import sys 
 import json
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense,Flatten,Dropout
-from tensorflow.keras.layers import Conv2D
-from tensorflow.keras.layers import MaxPooling2D
+from tensorflow.keras.layers import Dense, Flatten, Dropout
+from tensorflow.keras.layers import Conv2D, Input
+from tensorflow.keras.layers import MaxPooling2D, ZeroPadding2D
+from tensorflow.keras.models import Model
 #from keras_efficientnets import EfficientNetB0
 from efficientnet import EfficientNetB0
+
+def build_trivial():
+    # Use functional API to implement a trivial convolution neural network
+    inputs = Input(shape=(227, 227, 3))
+    x = Conv2D(64, (3, 3))(inputs)
+    y = Conv2D(64, (3, 3))(x)
+    y = ZeroPadding2D((1,1))(y)
+    z = tf.keras.layers.add([x,y])
+    z = MaxPooling2D((6, 6),256)(z)
+    out = Flatten()(z)
+    #TODO: check why usig dense can cause RuntimeError: Variable creator scope nesting error
+    #out = Dense(1000, activation='softmax')(out)
+    model = Model(inputs, out)    
+    return model
 
 def build_alexnet():
     print('Manually building AlexNet...')
@@ -93,6 +108,8 @@ if __name__ == '__main__':
     parser.add_argument('--clean', action='store_true')
 
     args = parser.parse_args()
+    
+    model = None
 
     if args.clean:
         subprocess.call('rm -rf /tmp/tmp*',shell=True)
@@ -132,47 +149,55 @@ if __name__ == '__main__':
         # TODO:failed to train with efficientnet.
         elif args.model == 'efficientnet':
             model = build_efficientnet() 
+        elif args.model == 'trivial':
+            model = build_trivial()
+        else:
+            print('model ' + args.model + ' is not defined.') 
+            sys.exit(-1)
 
 
-    if args.summary_only:
-        print(model.summary())
-        sys.exit(0)
-  
     subprocess.call('rm -rf %s' % args.ckpt_dir, shell=True)
 
     global input_name
     global img_shape
     global img_size
     input_name = model.input_names[0]
-    shape = list(model.layers[0].output_shape)
-    shape.pop(0)
-    img_shape = tuple(shape)
-    shape.pop(-1)
-    img_size = tuple(shape)
 
     if args.model == 'alexnet':
         img_shape = tuple([227, 227, 3])
         img_size = tuple([227, 227])
-    
-
+    else:
+        shape = list(model.layers[0].output_shape)
+        img_shape = shape[0][1:4]
+        img_size = img_shape[0:2]  
+ 
+    if args.summary_only:
+        print(model.summary())
+        print('imagenet image shape:')
+        print(img_shape)
+        print('imagenet image size:')
+        print(img_size)
+        sys.exit(0)
+ 
     filenames = glob.glob(args.raw_data_dir+"*.JPEG")
-    # if using distribute.Strategy(), only tensorflow native optimizer is allowed currently.
-    model.compile(optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),
+    
+    with tf.contrib.tfprof.ProfileContext(args.logdir, dump_steps=[1], trace_steps=[]) as pctx:
+        # if using distribute.Strategy(), only tensorflow native optimizer is allowed currently.
+        if args.strategy == 'mirrored':
+            distribution = tf.contrib.distribute.MirroredStrategy()
+        elif args.strategy == 'parameter_server':
+            distribution = tf.contrib.distribute.ParameterServerStrategy(num_gpus_per_worker=1)
+            if args.task.split(':')[0] == 'ps':
+                os.environ['CUDA_VISIBLE_DEVICES'] = ''
+        elif args.strategy == 'collective':
+            distribution = tf.contrib.distribute.CollectiveAllReduceStrategy(num_gpus_per_worker=2)
+        elif args.strategy == 'central_storage':
+            distribution = tf.contrib.distribute.OneDeviceStrategy(device='cpu')
+
+       
+        model.compile(optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),
                               loss='categorical_crossentropy',
                               metric='accuracy')
-
-    if args.strategy == 'mirrored':
-        distribution = tf.contrib.distribute.MirroredStrategy()
-    elif args.strategy == 'parameter_server':
-        distribution = tf.contrib.distribute.ParameterServerStrategy(num_gpus_per_worker=1)
-        if args.task.split(':')[0] == 'ps':
-            os.environ['CUDA_VISIBLE_DEVICES'] = ''
-    elif args.strategy == 'collective':
-        distribution = tf.contrib.distribute.CollectiveAllReduceStrategy(num_gpus_per_worker=2)
-    elif args.strategy == 'central_storage':
-        distribution = tf.contrib.distribute.OneDeviceStrategy(device='cpu')
-
-    with tf.contrib.tfprof.ProfileContext(args.logdir, dump_steps=[1], trace_steps=[]) as pctx:
         config = tf.estimator.RunConfig( train_distribute = distribution)
         est = tf.keras.estimator.model_to_estimator( keras_model = model,
                                                            config = config)
