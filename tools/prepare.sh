@@ -11,7 +11,7 @@ if [[ "${VIRTUAL_ENV}" == "" ]]; then
     FLAG_PIP += "--user"
 fi
 
-python -m pip install numpy scipy scikit-learn six pylint xlsxwriter pssh h5py keras ${FLAG_PIP} scikit-image efficientnet 
+python -m pip install numpy scipy scikit-learn six pylint xlsxwriter pssh h5py keras ${FLAG_PIP} scikit-image efficientnet jupyter 
 
 git clone https://github.com/tensorflow/benchmarks
 cd benchmarks && git checkout cnn_tf_v1.13_compatible && cd -
