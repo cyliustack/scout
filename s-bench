@@ -14,6 +14,35 @@ from tensorflow.keras.layers import MaxPooling2D, ZeroPadding2D
 from tensorflow.keras.models import Model
 #from keras_efficientnets import EfficientNetB0
 from efficientnet import EfficientNetB0
+import time
+import datetime
+
+
+class LoggerHook(tf.train.SessionRunHook):
+    # Logs loss and step time
+    def begin(self):
+        self._step = -1
+        self._start_time = time.time()
+        
+    def before_run(self, run_context):
+        self._step += 1
+        return tf.train.SessionRunArgs(None)
+    
+    def after_run(self, run_context, run_values):
+        log_frequency = 10
+        if self._step % 10 == 0:
+            current_time = time.time()
+            duration = current_time - self._start_time
+            self._start_time = current_time
+            
+            loss_value = run_values.results
+            examples_per_sec = log_frequency * 64.0 / duration
+            sec_per_batch = float(duration / log_frequency)
+            
+            format_str = ('%s: step %d, (%.1f examples/sec; %.3f '
+                          'sec/batch)')
+            print (format_str % (datetime.datetime.now(), self._step, 
+                                   examples_per_sec, sec_per_batch))
 
 def build_trivial():
     # Use functional API to implement a trivial convolution neural network
@@ -81,13 +110,18 @@ def imgs_input_fn(filenames, labels=None, batch_size=64):
     dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
     dataset = dataset.map(_parse_function)
     dataset = dataset.shuffle(buffer_size=256)
-    dataset = dataset.repeat(1)  # Repeats dataset this # times
+    dataset = dataset.repeat(10)  # Repeats dataset this # times
     dataset = dataset.batch(batch_size)  # Batch size to use
     # if using distribute.Strategy(), must use "return dataset" instead of "return batch_features, batch_lables" 
     return dataset
 
 
 if __name__ == '__main__':
+
+    tf_version = tuple(map(int, tf.__version__.split('.')))
+    if tf_version < (1,14,0):
+        print('tensorflow-gpu > 1.14.0 is required!')
+        sys.exit(-1)
     default_raw_data_dir = os.environ['HOME']+'/mini-imagenet/raw-data/train/n01440764/'
     default_ckpt_dir = 'mycheckpoint'
     parser = argparse.ArgumentParser()
@@ -144,7 +178,7 @@ if __name__ == '__main__':
             model = tf.keras.applications.densenet.DenseNet201(weights=None)
         elif args.model == 'nasnet':
             model = tf.keras.applications.nasnet.NASNetLarge(weights=None)
-        # TODO:failed to train with efficientnet.
+        # TODO:train with efficientnet.
         elif args.model == 'efficientnet':
             model = build_efficientnet() 
         elif args.model == 'trivial':
@@ -160,19 +194,9 @@ if __name__ == '__main__':
     global img_shape
     global img_size
     input_name = model.input_names[0]
+    img_shape = tuple([227, 227, 3])
+    img_size = tuple([227, 227])
 
-    if args.model == 'alexnet':
-        img_shape = tuple([227, 227, 3])
-        img_size = tuple([227, 227])
-    else:
-        shape = list(model.layers[0].output_shape)
-        if isinstance(shape, tuple):
-            img_shape = shape[0][1:4]
-            img_size = img_shape[0:2]  
-        else:
-            img_shape = shape[1:4]
-            img_size = img_shape[0:2] 
- 
     if args.summary_only:
         print(model.summary())
         print('imagenet image shape:')
@@ -207,7 +231,8 @@ if __name__ == '__main__':
     fn_image_preprocess = lambda : imgs_input_fn(filenames, None, args.batch_size)
     
     if args.strategy == 'mirrored' or args.strategy == 'central_storage':
-        est.train( input_fn = fn_image_preprocess , steps = args.num_batches)
+        est.train( input_fn = fn_image_preprocess , steps = args.num_batches, 
+                hooks=[                         LoggerHook()])
     elif args.strategy == 'parameter_server':
         tf_config = { "cluster": { "worker": args.worker.split(',') }, "task": {"type": args.task.split(':')[0], "index": args.task.split(':')[1]}}
         if args.ps != None:
@@ -218,5 +243,6 @@ if __name__ == '__main__':
         eval_spec = tf.estimator.EvalSpec(input_fn=fn_image_preprocess, steps = 1)
         tf.estimator.train_and_evaluate(est, train_spec, eval_spec) 
 
+    subprocess.call('rm -rf /tmp/tmp*',shell=True)
     print('S-Bench is done.')
 

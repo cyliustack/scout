@@ -8,7 +8,7 @@ This benchmark suite will include t-bench, dt-bench, and p-bench.
 
 Authors: All contributors. 
 # Prerequisite
-1. tensorflow >= 1.13.0
+1. tensorflow >= 1.14.0
 2. If you want to use profiling tool SOFA, please download it from https://github.com/cyliustack/sofa.git
 3. If you wnat to use benchmark with real data, 
    * a small subset of imagenet (TFRecords-only) can be downloaded from https://drive.google.com/open?id=1fhHzOLaNSYRNHo7noM159m2uSXFS5-wx
