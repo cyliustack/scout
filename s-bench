@@ -166,8 +166,12 @@ if __name__ == '__main__':
         img_size = tuple([227, 227])
     else:
         shape = list(model.layers[0].output_shape)
-        img_shape = shape[0][1:4]
-        img_size = img_shape[0:2]  
+        if isinstance(shape, tuple):
+            img_shape = shape[0][1:4]
+            img_size = img_shape[0:2]  
+        else:
+            img_shape = shape[1:4]
+            img_size = img_shape[0:2] 
  
     if args.summary_only:
         print(model.summary())
@@ -192,7 +196,7 @@ if __name__ == '__main__':
         distribution = tf.distribute.OneDeviceStrategy(device='cpu')
 
     
-    model.compile(optimizer=tf.keras.optimizers.SGD(lr=0.0001, momentum=0.9),
+    model.compile(optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.0001),
                           loss='categorical_crossentropy',
                           metric='accuracy')
     config = tf.estimator.RunConfig( train_distribute = distribution)
