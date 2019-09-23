@@ -43,6 +43,9 @@ class LoggerHook(tf.train.SessionRunHook):
                           'sec/batch)')
             print (format_str % (datetime.datetime.now(), self._step, 
                                    examples_per_sec, sec_per_batch))
+            losses = run_context.session.graph.get_collection("losses")
+            print('losses:%s' % run_context.session.run(losses))
+               
 
 def build_trivial():
     # Use functional API to implement a trivial convolution neural network
@@ -100,7 +103,7 @@ def imgs_input_fn(filenames, labels=None, batch_size=64):
         d = dict(zip([input_name], [image])), label
         return d 
     if labels is None:
-        labels = [0]*len(filenames)
+        labels = [1]*len(filenames)
     labels=np.array(labels)
     if len(labels.shape) == 1:
         labels = np.expand_dims(labels, axis=1)
