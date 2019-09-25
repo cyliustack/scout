@@ -36,7 +36,9 @@ class LoggerHook(tf.train.SessionRunHook):
             self._start_time = current_time
             
             loss_value = run_values.results
-            examples_per_sec = log_frequency * 64.0 / duration
+                                
+            examples_per_sec = log_frequency * args.batch_size / duration
+
             sec_per_batch = float(duration / log_frequency)
             losses = run_context.session.graph.get_collection("losses")            
             format_str = ('%s: step %d, (%.1f examples/sec; %.3f '
@@ -44,7 +46,6 @@ class LoggerHook(tf.train.SessionRunHook):
 
             print (format_str % (datetime.datetime.now(), self._step, 
                                    examples_per_sec, sec_per_batch, run_context.session.run(losses)))
-               
 
 def build_trivial():
     # Use functional API to implement a trivial convolution neural network
@@ -86,16 +87,11 @@ def build_efficientnet():
     model = EfficientNetB0(classes=1000, include_top=True, weights='imagenet')
     return model
 
-def imgs_input_fn(filenames, labels=None, batch_size=64):
-    def _parse_function(filename, label):
+def imgs_input_fn(filenames, labels, batch_size, input_name, img_shape, img_size):
+    def _parse_function(filename, label, input_name, img_shape, img_size):
         image_string = tf.io.read_file(filename)
         image = tf.io.decode_image(image_string, channels=3)
         image.set_shape([None, None, None])
-        global img_size
-        global img_shape
-        img_size = list(img_size)
-        img_shape = list(img_shape)
-        global input_name
         image = tf.image.resize(image, img_size)
         image.set_shape(img_shape)
         image = tf.reverse(image, axis=[2]) # 'RGB'->'BGR'
@@ -110,9 +106,9 @@ def imgs_input_fn(filenames, labels=None, batch_size=64):
     labels = tf.constant(labels)
     labels = tf.cast(labels, tf.float32)
     dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
-    dataset = dataset.map(_parse_function)
+    dataset = dataset.map(lambda filename, label : _parse_function(filename, label, input_name, img_shape, img_size))
     dataset = dataset.shuffle(buffer_size=256)
-    dataset = dataset.repeat(64)  # Repeats dataset this # times
+    dataset = dataset.repeat(args.num_batches)  # Repeats dataset this # times
     dataset = dataset.batch(batch_size)  # Batch size to use
     # if using distribute.Strategy(), must use "return dataset" instead of "return batch_features, batch_lables" 
     return dataset
@@ -133,7 +129,7 @@ if __name__ == '__main__':
     parser.add_argument('--raw_data_dir', help='path to directory containing training dataset', default=default_raw_data_dir)
     parser.add_argument('--logdir', help='path to directory containing logs', default='sbench_log')
     parser.add_argument('--ckpt_dir', help='path to checkpoint directory', default=default_ckpt_dir)
-    parser.add_argument('--num_batches', help='number of batches (a.k.a. steps or iterations', type=int, default=10)
+    parser.add_argument('--num_batches', help='number of batches (a.k.a. steps or iterations', type=int, default=20)
     parser.add_argument('--batch_size', help='batch size per device (e.g. 32,64)', type=int, default=64)
     parser.add_argument('--worker', help='e.g. "host1:2222,host2:2222"')
     parser.add_argument('--ps', help='e.g. "host1:2220,host2:2220"')
@@ -192,12 +188,9 @@ if __name__ == '__main__':
 
     subprocess.call('rm -rf %s' % args.ckpt_dir, shell=True)
 
-    global input_name
-    global img_shape
-    global img_size
     input_name = model.input_names[0]
-    img_shape = tuple([227, 227, 3])
-    img_size = tuple([227, 227])
+    img_shape = [227, 227, 3]
+    img_size = [227, 227]
 
     if args.summary_only:
         print(model.summary())
@@ -230,11 +223,12 @@ if __name__ == '__main__':
                                                        config = config)
     
     # Create a callalble object: fn_image_preprocess
-    fn_image_preprocess = lambda : imgs_input_fn(filenames, None, args.batch_size)
+    fn_image_preprocess = lambda : imgs_input_fn(filenames, None, args.batch_size, input_name, img_shape, img_size)
     
+
     if args.strategy == 'mirrored' or args.strategy == 'central_storage':
         est.train( input_fn = fn_image_preprocess , steps = args.num_batches, 
-                hooks=[                         LoggerHook()])
+                hooks=[LoggerHook()])
     elif args.strategy == 'parameter_server':
         tf_config = { "cluster": { "worker": args.worker.split(',') }, "task": {"type": args.task.split(':')[0], "index": args.task.split(':')[1]}}
         if args.ps != None:
