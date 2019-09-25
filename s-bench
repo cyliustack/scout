@@ -38,13 +38,12 @@ class LoggerHook(tf.train.SessionRunHook):
             loss_value = run_values.results
             examples_per_sec = log_frequency * 64.0 / duration
             sec_per_batch = float(duration / log_frequency)
-            
+            losses = run_context.session.graph.get_collection("losses")            
             format_str = ('%s: step %d, (%.1f examples/sec; %.3f '
-                          'sec/batch)')
+                          'sec/batch), losses:%s')
+
             print (format_str % (datetime.datetime.now(), self._step, 
-                                   examples_per_sec, sec_per_batch))
-            losses = run_context.session.graph.get_collection("losses")
-            print('losses:%s' % run_context.session.run(losses))
+                                   examples_per_sec, sec_per_batch, run_context.session.run(losses)))
                
 
 def build_trivial():
@@ -113,7 +112,7 @@ def imgs_input_fn(filenames, labels=None, batch_size=64):
     dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
     dataset = dataset.map(_parse_function)
     dataset = dataset.shuffle(buffer_size=256)
-    dataset = dataset.repeat(10)  # Repeats dataset this # times
+    dataset = dataset.repeat(64)  # Repeats dataset this # times
     dataset = dataset.batch(batch_size)  # Batch size to use
     # if using distribute.Strategy(), must use "return dataset" instead of "return batch_features, batch_lables" 
     return dataset
