@@ -17,6 +17,11 @@ from efficientnet import EfficientNetB0
 import time
 import datetime
 
+# ======= Usage =========
+# For PS node,     ./s-bench --ps='node0_ip_addr:5001' --worker='node1_ip_addr:5002' --strategy=parameter_server --task='ps:0'
+# For worker node, ./s-bench --ps='node0_ip_addr:5001' --worker='node1_ip_addr:5002' --strategy=parameter_server --task='worker:0'
+
+
 
 class LoggerHook(tf.estimator.SessionRunHook):
     # Logs loss and step time
