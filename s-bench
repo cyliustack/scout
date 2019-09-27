@@ -18,7 +18,7 @@ import time
 import datetime
 
 
-class LoggerHook(tf.train.SessionRunHook):
+class LoggerHook(tf.estimator.SessionRunHook):
     # Logs loss and step time
     def begin(self):
         self._step = -1
@@ -115,7 +115,7 @@ def imgs_input_fn(filenames, labels, batch_size, input_name, img_shape, img_size
 
 
 if __name__ == '__main__':
-
+    #tf.logging.set_verbosity(10)
     tf_version = tuple(map(int, tf.__version__.split('.')))
     if tf_version < (1,14,0):
         print('tensorflow-gpu > 1.14.0 is required!')
@@ -186,7 +186,7 @@ if __name__ == '__main__':
             sys.exit(-1)
 
 
-    subprocess.call('rm -rf %s' % args.ckpt_dir, shell=True)
+    #subprocess.call('rm -rf %s' % args.ckpt_dir, shell=True)
 
     input_name = model.input_names[0]
     img_shape = [227, 227, 3]
@@ -205,40 +205,50 @@ if __name__ == '__main__':
     # if using distribute.Strategy(), only tensorflow native optimizer is allowed currently.
     if args.strategy == 'mirrored':
         distribution = tf.distribute.MirroredStrategy()
+    elif args.strategy == 'hc':
+        distribution = tf.distribute.HierarchicalCopyAllReduce()
     elif args.strategy == 'parameter_server':
-        distribution = tf.distribute.ParameterServerStrategy(num_gpus_per_worker=1)
+        distribution = tf.distribute.experimental.ParameterServerStrategy()
         if args.task.split(':')[0] == 'ps':
             os.environ['CUDA_VISIBLE_DEVICES'] = ''
     elif args.strategy == 'collective':
-        distribution = tf.distribute.CollectiveAllReduceStrategy(num_gpus_per_worker=2)
-    elif args.strategy == 'central_storage':
+        distribution = tf.distribute.experimental.CollectiveAllReduceStrategy(num_gpus_per_worker=2)
+    elif args.strategy == 'one_device':
         distribution = tf.distribute.OneDeviceStrategy(device='cpu')
 
     
     model.compile(optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.0001),
                           loss='categorical_crossentropy',
                           metric='accuracy')
-    config = tf.estimator.RunConfig( train_distribute = distribution)
-    est = tf.keras.estimator.model_to_estimator( keras_model = model,
-                                                       config = config)
-    
     # Create a callalble object: fn_image_preprocess
     fn_image_preprocess = lambda : imgs_input_fn(filenames, None, args.batch_size, input_name, img_shape, img_size)
     
 
-    if args.strategy == 'mirrored' or args.strategy == 'central_storage':
-        est.train( input_fn = fn_image_preprocess , steps = args.num_batches, 
-                hooks=[LoggerHook()])
+    if args.strategy in ['mirrored', 'one_device', 'hc']:
+        config = tf.estimator.RunConfig( train_distribute = distribution)
+        est = tf.keras.estimator.model_to_estimator( keras_model = model,
+                                                       config = config)
+        est.train( input_fn = fn_image_preprocess , steps = args.num_batches, hooks=[LoggerHook()])
     elif args.strategy == 'parameter_server':
-        tf_config = { "cluster": { "worker": args.worker.split(',') }, "task": {"type": args.task.split(':')[0], "index": args.task.split(':')[1]}}
+        
+        strategy = tf.distribute.experimental.ParameterServerStrategy()
+        config = tf.estimator.RunConfig(train_distribute=strategy)
+        tf_config = { "cluster": { "worker": args.worker.split(',')},
+                      "task": { "type": args.task.split(':')[0], 
+                                "index": args.task.split(':')[1]}
+                    }
         if args.ps != None:
             tf_config['cluster']['ps'] = args.ps.split(',')
         print(json.dumps(tf_config))
         os.environ['TF_CONFIG'] = json.dumps(tf_config)
-        train_spec = tf.estimator.TrainSpec(input_fn=fn_image_preprocess, max_steps = args.num_batches)
+        est = tf.keras.estimator.model_to_estimator( keras_model = model,
+                                                       config = config)
+        train_spec = tf.estimator.TrainSpec(input_fn=fn_image_preprocess, max_steps = args.num_batches, hooks=[LoggerHook()] )
         eval_spec = tf.estimator.EvalSpec(input_fn=fn_image_preprocess, steps = 1)
         tf.estimator.train_and_evaluate(est, train_spec, eval_spec) 
+        print("Train and evaluate are done.")
 
     subprocess.call('rm -rf /tmp/tmp*',shell=True)
+    subprocess.call('rm -rf %s' % args.ckpt_dir, shell=True)
     print('S-Bench is done.')
 
