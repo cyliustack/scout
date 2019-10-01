@@ -21,7 +21,8 @@ import datetime
 # For PS node,     ./s-bench --ps='node0_ip_addr:5001' --worker='node1_ip_addr:5002' --strategy=parameter_server --task='ps:0'
 # For worker node, ./s-bench --ps='node0_ip_addr:5001' --worker='node1_ip_addr:5002' --strategy=parameter_server --task='worker:0'
 
-
+# ======= MultiWorkerMirror Usage ======
+# ./s-bench --worker='node0_ip_addr:5001,node1_ip_addr:5001' --strategy=multiworkermirror --task='worker:0' 
 
 class LoggerHook(tf.estimator.SessionRunHook):
     # Logs loss and step time
