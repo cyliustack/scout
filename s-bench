@@ -21,7 +21,8 @@ import datetime
 # For PS node,     ./s-bench --ps='node0_ip_addr:5001' --worker='node1_ip_addr:5002' --strategy=parameter_server --task='ps:0'
 # For worker node, ./s-bench --ps='node0_ip_addr:5001' --worker='node1_ip_addr:5002' --strategy=parameter_server --task='worker:0'
 
-
+# ======= MultiWorkerMirror Usage ======
+# ./s-bench --worker='node0_ip_addr:5001,node1_ip_addr:5001' --strategy=multiworkermirror --task='worker:0' 
 
 class LoggerHook(tf.estimator.SessionRunHook):
     # Logs loss and step time
@@ -228,6 +229,13 @@ if __name__ == '__main__':
         distribution = tf.distribute.experimental.CollectiveAllReduceStrategy(num_gpus_per_worker=2)
     elif args.strategy == 'one_device':
         distribution = tf.distribute.OneDeviceStrategy(device='cpu')
+    elif args.strategy == 'multiworkermirror':
+        tf_config = { "cluster": { "worker": args.worker.split(',')},
+                      "task": { "type": args.task.split(':')[0],
+                                "index": args.task.split(':')[1]}
+                    }
+        os.environ['TF_CONFIG'] = json.dumps(tf_config)
+        distribution = tf.distribute.experimental.MultiWorkerMirroredStrategy()   
     else:
         print('Not supported strategy.')
         sys.exit(-1)
@@ -254,6 +262,14 @@ if __name__ == '__main__':
         eval_spec = tf.estimator.EvalSpec(input_fn=fn_image_preprocess, steps = 1)
         tf.estimator.train_and_evaluate(est, train_spec, eval_spec) 
         print("Train and evaluate are done.")
+    elif args.strategy == 'multiworkermirror':
+        print('Training with MultiWorkerMirror')
+        config = tf.estimator.RunConfig( train_distribute = distribution)
+        est = tf.keras.estimator.model_to_estimator( keras_model = model,
+                                                     config = config)
+        train_spec = tf.estimator.TrainSpec(input_fn=fn_image_preprocess, max_steps = args.num_batches, hooks=[LoggerHook()] )
+        eval_spec = tf.estimator.EvalSpec(input_fn=fn_image_preprocess, steps = 1)
+        tf.estimator.train_and_evaluate(est, train_spec, eval_spec)  
     else:
         print('Not supported strategy.')
         sys.exit(-1)
