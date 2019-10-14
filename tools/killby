@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+
+import subprocess
+import argparse
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('procname', metavar='<PROCESS_KEYWORD>')
+    args = parser.parse_args() 
+    subprocess.call('ps aux | grep %s | awk {\'print $2\'} | xargs kill -9' % args.procname, shell='True')
