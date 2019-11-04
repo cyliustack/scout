@@ -12,8 +12,9 @@ from tensorflow.keras.layers import Dense, Flatten, Dropout
 from tensorflow.keras.layers import Conv2D, Input
 from tensorflow.keras.layers import MaxPooling2D, ZeroPadding2D
 from tensorflow.keras.models import Model
+# TODO: suuport efficientnet
 #from keras_efficientnets import EfficientNetB0
-from efficientnet import EfficientNetB0
+#from efficientnet import EfficientNetB0
 import time
 import datetime
 
@@ -87,11 +88,11 @@ def build_alexnet():
     print('AlexNet Model buidling is done.')
     return model
 
-
-def build_efficientnet():
-    model = EfficientNetB0(weights='imagenet')
-    model = EfficientNetB0(classes=1000, include_top=True, weights='imagenet')
-    return model
+# TODO: suuport efficientnet
+#def build_efficientnet():
+#    model = EfficientNetB0(weights='imagenet')
+#    model = EfficientNetB0(classes=1000, include_top=True, weights='imagenet')
+#    return model
 
 def imgs_input_fn(filenames, labels, batch_size, input_name, img_shape, img_size):
     def _parse_function(filename, label, input_name, img_shape, img_size):
@@ -183,8 +184,8 @@ if __name__ == '__main__':
         elif args.model == 'nasnet':
             model = tf.keras.applications.nasnet.NASNetLarge(weights=None)
         # TODO:train with efficientnet.
-        elif args.model == 'efficientnet':
-            model = build_efficientnet() 
+        #elif args.model == 'efficientnet':
+        #    model = build_efficientnet() 
         elif args.model == 'trivial':
             model = build_trivial()
         else:
