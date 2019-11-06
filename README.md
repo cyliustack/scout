@@ -36,9 +36,9 @@ sudo sysctl -w vm.drop_caches=3
 ./t-bench.py --model=resnet50 --data_dir /tmp/ramdisk/dataset/imagenet 
 ./s-bench --model=resnet50 --strategy="parameter_server"
 ./tools/get_latency.py resnet50
-./dt-bench parameter_server:resnet50
-./dt-bench distributed_replicated:resnet50 --hierarchical_copy
-./dt-bench distributed_all_reduce:resnet50 --all_reduce_spec=pscpu#2
+./scout/dt-bench parameter_server:resnet50
+./scout/dt-bench distributed_replicated:resnet50 --hierarchical_copy
+./scout/dt-bench distributed_all_reduce:resnet50 --all_reduce_spec=pscpu#2
 cd dt-bench && ./run_strategy.sh mi ; cd - 
 ```
 

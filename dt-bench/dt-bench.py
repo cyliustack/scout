@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import os
-import xlsxwriter
 import random
 import time
 import socket
 import argparse
+
+#import xlsxwriter 
 # multimachine benchmarks configure
 #-------------------------------------------------------------------------
 if __name__ == "__main__":
@@ -18,6 +19,12 @@ if __name__ == "__main__":
     server_protocol = 'grpc'
     data_dir = ''
     timeout = 200
+
+    try:
+       __import__('xlsxwriter')
+       use_xlsxwriter = True 
+    except ImportError:
+       use_xlsxwriter = False 
 
     parser = argparse.ArgumentParser(description='DT-Bench')
     parser.add_argument(
@@ -116,23 +123,24 @@ if __name__ == "__main__":
     batch_num = len(batch_num_array) + 1
 
     # data = [[None] * batch_num for i in range(len(models) +1)]
-    title = ['batch_size'] + models
-    workbook = xlsxwriter.Workbook('dt-bench.xlsx')
-    sheet1 = workbook.add_worksheet('parameter_server')
-    sheet2 = workbook.add_worksheet('distributed_replicated')
-    bold = workbook.add_format({'bold': 1})
+    if use_xlsxwriter:
+        title = ['batch_size'] + models
+        workbook = xlsxwriter.Workbook('dt-bench.xlsx')
+        sheet1 = workbook.add_worksheet('parameter_server')
+        sheet2 = workbook.add_worksheet('distributed_replicated')
+        bold = workbook.add_format({'bold': 1})
 
-    # xlsx model title and batch_size
-    tmp = 0
-    for a in title:
-        sheet1.write(tmp, 0, a)
-        sheet2.write(tmp, 0, a)
-        tmp += 1
-    tmp = 1
-    for b in batch_num_array:
-        sheet1.write(0, tmp, b)
-        sheet2.write(0, tmp, b)
-        tmp += 1
+        # xlsx model title and batch_size
+        tmp = 0
+        for a in title:
+            sheet1.write(tmp, 0, a)
+            sheet2.write(tmp, 0, a)
+            tmp += 1
+        tmp = 1
+        for b in batch_num_array:
+            sheet1.write(0, tmp, b)
+            sheet2.write(0, tmp, b)
+            tmp += 1
 
     # ps and worker port
     # 451952-58000 reserved for private, dynamic and temporary usages
@@ -373,72 +381,73 @@ if __name__ == "__main__":
                 else:
                     result_number = '0\n'
 
-    # write the result back to excel file
-                if variable == 'parameter_server':
-                    sheet1.write(
-                        models.index(model) + 1,
-                        batch_num_array.index(i) + 1,
-                        round(float(result_number)))
-                elif variable == 'distributed_replicated':
-                    sheet2.write(
-                        models.index(model) + 1,
-                        batch_num_array.index(i) + 1,
-                        round(float(result_number)))
+                # write the result back to excel file
+                if use_xlsxwriter:
+                    if variable == 'parameter_server':
+                        sheet1.write(
+                            models.index(model) + 1,
+                            batch_num_array.index(i) + 1,
+                            round(float(result_number)))
+                    elif variable == 'distributed_replicated':
+                        sheet2.write(
+                            models.index(model) + 1,
+                            batch_num_array.index(i) + 1,
+                            round(float(result_number)))
 
-    #
-    #
-    # Create a new column chart.#
-    chart1 = workbook.add_chart({'type': 'column'})
-    chart2 = workbook.add_chart({'type': 'column'})
+    
+    if use_xlsxwriter:
+        # Create a new column chart.#
+        chart1 = workbook.add_chart({'type': 'column'})
+        chart2 = workbook.add_chart({'type': 'column'})
 
-    # Configure series. Note use of alternative syntax to define ranges.
-    for k in batch_num_array:
-        chart1.add_series({
-            'name':
-                ['parameter_server', 0, batch_num_array.index(k) + 1],
-            'categories': ['parameter_server', 1, 0, len(models), 0],
-            'values':
-                ['parameter_server', 1, batch_num_array.index(
-                    k) + 1, len(models), batch_num_array.index(k) + 1],
-            'data_labels': {'value': True},
-        })
-        chart2.add_series({
-            'name':
-                ['distributed_replicated', 0, batch_num_array.index(k) + 1],
-            'categories': ['distributed_replicated', 1, 0, len(models), 0],
-            'values':
-                ['distributed_replicated',
-                         1,
-                         batch_num_array.index(
-                 k) + 1,
-                         len(models),
-                    batch_num_array.index(k) + 1],
-            'data_labels': {'value': True},
-        })
+        # Configure series. Note use of alternative syntax to define ranges.
+        for k in batch_num_array:
+            chart1.add_series({
+                'name':
+                    ['parameter_server', 0, batch_num_array.index(k) + 1],
+                'categories': ['parameter_server', 1, 0, len(models), 0],
+                'values':
+                    ['parameter_server', 1, batch_num_array.index(
+                        k) + 1, len(models), batch_num_array.index(k) + 1],
+                'data_labels': {'value': True},
+            })
+            chart2.add_series({
+                'name':
+                    ['distributed_replicated', 0, batch_num_array.index(k) + 1],
+                'categories': ['distributed_replicated', 1, 0, len(models), 0],
+                'values':
+                    ['distributed_replicated',
+                             1,
+                             batch_num_array.index(
+                     k) + 1,
+                             len(models),
+                        batch_num_array.index(k) + 1],
+                'data_labels': {'value': True},
+            })
 
-    # Add a chart title and some axis labels.
-    chart1.set_title({'name': 'Variable Update Parameter_server'})
-    chart1.set_x_axis({'name': 'models'})
-    chart1.set_y_axis({'name': 'img/sec'})
+        # Add a chart title and some axis labels.
+        chart1.set_title({'name': 'Variable Update Parameter_server'})
+        chart1.set_x_axis({'name': 'models'})
+        chart1.set_y_axis({'name': 'img/sec'})
 
-    chart2.set_title({'name': 'Variable Update Distributed_Replicated'})
-    chart2.set_x_axis({'name': 'models'})
-    chart2.set_y_axis({'name': 'img/sec'})
+        chart2.set_title({'name': 'Variable Update Distributed_Replicated'})
+        chart2.set_x_axis({'name': 'models'})
+        chart2.set_y_axis({'name': 'img/sec'})
 
-    # Set an Excel chart style.
-    chart1.set_style(11)
-    chart2.set_style(11)
+        # Set an Excel chart style.
+        chart1.set_style(11)
+        chart2.set_style(11)
 
-    # Insert the chart into the worksheet (with an offset).
-    sheet1.insert_chart(
-        'A' + str(len(models) + 5),
-        chart1,
-     {'x_offset': 25,
-      'y_offset': 10})
-    sheet2.insert_chart(
-        'A' + str(len(models) + 5),
-        chart2,
-     {'x_offset': 25,
-      'y_offset': 10})
+        # Insert the chart into the worksheet (with an offset).
+        sheet1.insert_chart(
+            'A' + str(len(models) + 5),
+            chart1,
+         {'x_offset': 25,
+          'y_offset': 10})
+        sheet2.insert_chart(
+            'A' + str(len(models) + 5),
+            chart2,
+         {'x_offset': 25,
+          'y_offset': 10})
 
-    workbook.close()
+        workbook.close()
